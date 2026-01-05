@@ -1,0 +1,15 @@
+{
+  "name": "@betalogs/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.js",
+  "files": [
+    "eslint",
+    "typescript",
+    "prettier"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "clean:all": "pnpm clean"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@betalogs/core": [
+        "./packages/core/src"
+      ],
+      "@betalogs/core/*": [
+        "./packages/core/src/*"
+      ],
+      "@betalogs/database": [
+        "./packages/database/src"
+      ],
+      "@betalogs/database/*": [
+        "./packages/database/src/*"
+      ],
+      "@betalogs/shared": [
+        "./packages/shared/src"
+      ],
+      "@betalogs/shared/*": [
+        "./packages/shared/src/*"
+      ]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

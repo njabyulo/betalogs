@@ -1,0 +1,37 @@
+{
+  "name": "@betalogs/shared",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/constants/index.js",
+      "types": "./dist/constants/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "pnpm lint:type && pnpm lint:code",
+    "lint:type": "tsc --noEmit",
+    "lint:code": "pnpm exec eslint . --max-warnings 0",
+    "clean": "rm -rf dist .turbo",
+    "clean:all": "pnpm clean && rm -rf node_modules"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
