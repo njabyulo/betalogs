@@ -22,6 +22,11 @@ import type {
   ISearchAdapterExactSearchResult,
 } from '../interfaces'
 
+interface CacheEntry {
+  registry: Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>
+  timestamp: number
+}
+
 class SearchAdapter implements ISearchAdapter {
   private embeddingAdapter: IEmbeddingAdapter
   private client: Client
@@ -29,7 +34,10 @@ class SearchAdapter implements ISearchAdapter {
   private modelType: TSearchModelType
   private fieldMappingConfig: IFieldMappingConfig
   private metadataRegistryLookup?: ISearchAdapterOptions['metadataRegistryLookup']
-  private registryCache: Map<string, Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>> = new Map()
+  // Cache with TTL and size limits
+  private registryCache: Map<string, CacheEntry> = new Map()
+  private readonly cacheTtlMs: number = 5 * 60 * 1000 // 5 minutes default TTL
+  private readonly cacheMaxSize: number = 100 // Maximum number of tenant entries
 
   constructor(options: ISearchAdapterOptions) {
     this.embeddingAdapter = options.embeddingAdapter
@@ -73,6 +81,82 @@ class SearchAdapter implements ISearchAdapter {
     }
 
     this.ensureIndex()
+  }
+
+  /**
+   * Invalidate cache entry for a specific tenant
+   */
+  invalidateCache(tenantId: string): void {
+    this.registryCache.delete(tenantId)
+  }
+
+  /**
+   * Clear all cache entries
+   */
+  clearCache(): void {
+    this.registryCache.clear()
+  }
+
+  /**
+   * Evict expired entries and enforce size limit using LRU strategy
+   */
+  private evictCacheEntries(): void {
+    const now = Date.now()
+    const entries = Array.from(this.registryCache.entries())
+
+    // Remove expired entries
+    for (const [tenantId, entry] of entries) {
+      if (now - entry.timestamp > this.cacheTtlMs) {
+        this.registryCache.delete(tenantId)
+      }
+    }
+
+    // If still over size limit, remove oldest entries (LRU)
+    if (this.registryCache.size > this.cacheMaxSize) {
+      const sortedEntries = Array.from(this.registryCache.entries()).sort(
+        (a, b) => a[1].timestamp - b[1].timestamp
+      )
+      const toRemove = this.registryCache.size - this.cacheMaxSize
+      for (let i = 0; i < toRemove; i++) {
+        this.registryCache.delete(sortedEntries[i]![0])
+      }
+    }
+  }
+
+  /**
+   * Get registry from cache or fetch if not available/expired
+   */
+  private async getRegistryForTenant(
+    tenantId: string
+  ): Promise<Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry> | undefined> {
+    if (!this.metadataRegistryLookup) {
+      return undefined
+    }
+
+    // Evict expired/old entries before lookup
+    this.evictCacheEntries()
+
+    const cached = this.registryCache.get(tenantId)
+    const now = Date.now()
+
+    // Return cached entry if it exists and is not expired
+    if (cached && now - cached.timestamp <= this.cacheTtlMs) {
+      return cached.registry
+    }
+
+    // Fetch fresh registry
+    const registry = await this.metadataRegistryLookup.getRegistryForTenant(tenantId)
+
+    // Store in cache with current timestamp
+    this.registryCache.set(tenantId, {
+      registry,
+      timestamp: now,
+    })
+
+    // Evict again after adding to ensure we don't exceed size limit
+    this.evictCacheEntries()
+
+    return registry
   }
 
   async ensureIndex(): Promise<void> {
@@ -163,16 +247,10 @@ class SearchAdapter implements ISearchAdapter {
       document.meta_kv = metaKv
 
       // Get registry for tenant if metadataRegistryLookup is available and tenantId is provided
-      let registry: Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry> | undefined
-      if (this.metadataRegistryLookup && tenantId) {
-        // Check cache first
-        if (!this.registryCache.has(tenantId)) {
-          registry = await this.metadataRegistryLookup.getRegistryForTenant(tenantId)
-          this.registryCache.set(tenantId, registry)
-        } else {
-          registry = this.registryCache.get(tenantId)
-        }
-      }
+      // Uses cache with TTL and automatic eviction
+      const registry = tenantId
+        ? await this.getRegistryForTenant(tenantId)
+        : undefined
 
       // For registered keys, write to typed namespaces
       if (registry) {
@@ -206,7 +284,29 @@ class SearchAdapter implements ISearchAdapter {
                   }
                   break
                 case 'boolean':
-                  typedValue = Boolean(value)
+                  // Validate and convert boolean values
+                  // Handle actual boolean values
+                  if (typeof value === 'boolean') {
+                    typedValue = value
+                  } else if (typeof value === 'string') {
+                    // Normalize string to lowercase for comparison
+                    const normalized = value.toLowerCase().trim()
+                    // Accept common truthy string representations
+                    if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+                      typedValue = true
+                    } else if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+                      typedValue = false
+                    } else {
+                      // Skip invalid boolean string representations
+                      continue
+                    }
+                  } else if (typeof value === 'number') {
+                    // Convert 1/0 to boolean
+                    typedValue = value !== 0
+                  } else {
+                    // Skip non-boolean, non-string, non-number values
+                    continue
+                  }
                   break
                 case 'keyword':
                 case 'text':
