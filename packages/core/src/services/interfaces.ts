@@ -8,6 +8,7 @@ import type {
   ICreateChatRepositoryOptions,
   ICreateIndexingRepositoryOptions,
 } from '../repositories/interfaces'
+import type { z } from 'zod'
 
 import type { IndexingRepository } from '../repositories/indexing'
 
@@ -35,11 +36,11 @@ export interface IIndexingServiceOptions {
 }
 export interface ICreateIndexingServiceOptions
   extends ICreateIndexingRepositoryOptions { }
-export interface IChatService {
-  chat(prompt: string): Promise<string>
+export interface IChatService<TSchema extends z.ZodTypeAny> {
+  chat(prompt: string): Promise<z.infer<TSchema>>
 }
-export interface IChatServiceOptions {
-  chatRepository: IChatRepository
+export interface IChatServiceOptions<TSchema extends z.ZodTypeAny> {
+  chatRepository: IChatRepository<TSchema>
 }
-export interface ICreateChatServiceOptions
-  extends ICreateChatRepositoryOptions { }
+export interface ICreateChatServiceOptions<TSchema extends z.ZodTypeAny>
+  extends ICreateChatRepositoryOptions<TSchema> { }

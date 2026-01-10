@@ -1,4 +1,5 @@
 import { ToolSet } from 'ai'
+import type { z } from 'zod'
 import type {
   AgentAdapter,
   ICreateAgentAdapterOptions,
@@ -12,6 +13,7 @@ import type {
 import type {
   createKnowledgeBaseSearchTool,
   createRewriteQueryTool,
+  createStorySearchTool,
 } from './chat/tools/opensearch'
 
 export type {
@@ -34,22 +36,23 @@ export interface ICreateIndexingRepositoryOptions
   extends ICreateSearchAdapterOptions { }
 
 
-export interface IChatRepository {
-  chat(prompt: string): Promise<string>
+export interface IChatRepository<TSchema extends z.ZodTypeAny> {
+  chat(prompt: string): Promise<z.infer<TSchema>>
 }
 
-export interface IChatRepositoryOptions<D, T extends ToolSet> {
-  chatAgent: AgentAdapter<D, T>
+export interface IChatRepositoryOptions<D, T extends ToolSet, TSchema extends z.ZodTypeAny> {
+  chatAgent: AgentAdapter<D, T, TSchema>
 }
 
 export type TChatToolSet = {
   knowledgeBaseSearch?: ReturnType<typeof createKnowledgeBaseSearchTool>
   rewriteQuery?: ReturnType<typeof createRewriteQueryTool>
+  storySearch?: ReturnType<typeof createStorySearchTool>
 }
 
-export type TChatToolOptions = 'knowledge-base-search' | 'rewrite-query'
+export type TChatToolOptions = 'knowledge-base-search' | 'rewrite-query' | 'story-search'
 
-export interface ICreateChatRepositoryOptions
+export interface ICreateChatRepositoryOptions<TSchema extends z.ZodTypeAny>
   extends ICreateSearchAdapterOptions,
   Omit<
     ICreateAgentAdapterOptions<TChatToolOptions, TChatToolSet>,
@@ -58,4 +61,5 @@ export interface ICreateChatRepositoryOptions
   text: ICreateTextAdapterOptions
   tools: Set<TChatToolOptions>
   systemPrompt: string
+  schema: TSchema
 }

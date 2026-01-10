@@ -1,6 +1,9 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { createSearchAdapter, createTextAdapter } from '../../../adapters'
+import type {
+  ISearchAdapterExactSearchArgs,
+} from '../../../adapters/interfaces'
 
 interface ICreateRewriteQueryToolOptions {
   provider: 'google'
@@ -73,6 +76,58 @@ export const createKnowledgeBaseSearchTool = (
     }),
     execute: async ({ query, k }) => {
       return await search.knnSearch({ query, k: k ?? 8 })
+    },
+  })
+}
+
+interface ICreateStorySearchToolOptions {
+  opensearch: {
+    node: string
+    index: string
+    username?: string
+    password?: string
+  }
+}
+
+export const createStorySearchTool = (
+  options: ICreateStorySearchToolOptions
+) => {
+  const search = createSearchAdapter({
+    embedding: {
+      provider: 'google',
+      model: 'gemini-embedding-001',
+      dimension: 3072,
+    },
+    opensearch: options.opensearch,
+  })
+
+  return tool({
+    description:
+      'Exact search for all events related to a specific identifier (orderId, traceId, requestId, email, checkoutId, userId, emailHash). Use this when the user provides a specific identifier to retrieve the complete timeline of events. Returns all matching events sorted chronologically.',
+    inputSchema: z.object({
+      identifier: z
+        .string()
+        .describe(
+          'The identifier value to search for (e.g., "order_ord123", "req_abc456", "alice@example.com")'
+        ),
+      identifierType: z
+        .enum([
+          'orderId',
+          'traceId',
+          'email',
+          'requestId',
+          'checkoutId',
+          'userId',
+          'emailHash',
+        ])
+        .describe('The type of identifier being searched'),
+    }),
+    execute: async ({ identifier, identifierType }) => {
+      const results = await search.exactSearch({
+        identifier,
+        identifierType: identifierType as ISearchAdapterExactSearchArgs['identifierType'],
+      })
+      return results
     },
   })
 }

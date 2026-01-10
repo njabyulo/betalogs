@@ -1,4 +1,5 @@
 import type { Embedding, ToolLoopAgentSettings, ToolSet } from 'ai'
+import type { z } from 'zod'
 
 export interface ISearchEmbeddingModelArgs {
   provider: 'google'
@@ -26,7 +27,7 @@ export interface IEmbeddingAdapterConfig {
   }
 }
 export interface ICreateEmbeddingAdapterOptions
-  extends IEmbeddingAdapterConfig {}
+  extends IEmbeddingAdapterConfig { }
 export interface IEmbeddingAdapterEmbedArgs {
   value: string
   type: keyof IEmbeddingAdapterConfig['options']['model']
@@ -87,6 +88,20 @@ export interface ISearchAdapterKnnSearchResult {
   metadata: Record<string, unknown>
 }
 
+export interface ISearchAdapterExactSearchArgs {
+  identifier: string
+  identifierType: 'orderId' | 'traceId' | 'email' | 'requestId' | 'checkoutId' | 'userId' | 'emailHash'
+}
+
+export interface ISearchAdapterExactSearchResult {
+  id: string
+  timestamp: string
+  level: string
+  service: string
+  message: string
+  metadata: Record<string, unknown>
+}
+
 export interface ISearchAdapter {
   ensureIndex(): Promise<void>
   clearIndex(): Promise<void>
@@ -94,6 +109,9 @@ export interface ISearchAdapter {
   knnSearch(
     args: ISearchAdapterKnnSearchArgs
   ): Promise<ISearchAdapterKnnSearchResult[]>
+  exactSearch(
+    args: ISearchAdapterExactSearchArgs
+  ): Promise<ISearchAdapterExactSearchResult[]>
 }
 
 export interface ITextAdapterOptions {
@@ -104,7 +122,7 @@ export interface ITextAdapterOptions {
     high: 'gemini-2.5-flash-pro'
   }
 }
-export interface ICreateTextAdapterOptions extends ITextAdapterOptions {}
+export interface ICreateTextAdapterOptions extends ITextAdapterOptions { }
 export interface ITextAdapterGenerateTextArgs {
   prompt: string
   system?: string
@@ -112,7 +130,7 @@ export interface ITextAdapterGenerateTextArgs {
 }
 
 export interface IAgentAdapterOptions<D, T>
-  extends Omit<ToolLoopAgentSettings<never, any, never>, 'model'> {
+  extends Omit<ToolLoopAgentSettings<never, any, never>, 'model' | 'output'> {
   provider: 'google'
   model: {
     low: 'gemini-2.5-flash-lite'
@@ -121,9 +139,12 @@ export interface IAgentAdapterOptions<D, T>
   }
   tools: ToolSet
   activeModelType: keyof IAgentAdapterOptions<D, T>['model']
+  output?: {
+    schema: z.ZodTypeAny
+  }
 }
 export interface ICreateAgentAdapterOptions<D, T>
-  extends IAgentAdapterOptions<D, T> {}
+  extends IAgentAdapterOptions<D, T> { }
 export type TAgentAdapterModelOptions<D, T> = IAgentAdapterOptions<
   D,
   T
@@ -136,4 +157,9 @@ export interface IAgentAdapterGenerateTextArgs<D, T> {
   prompt: string
   system?: string
   type: keyof IAgentAdapterOptions<D, T>['model']
+}
+
+export interface IAgentAdapterGenerateTextResult<TSchema extends z.ZodTypeAny | undefined> {
+  text: string
+  output?: TSchema extends z.ZodTypeAny ? z.infer<TSchema> : never
 }
