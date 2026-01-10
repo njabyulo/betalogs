@@ -5,11 +5,11 @@ import {
 } from '@opensearch-project/opensearch/api/index.js'
 import { createEmbeddingAdapter } from '../ai-sdk'
 import {
+  IActivityEventDocument,
   ICreateSearchAdapterOptions,
   IEmbeddingAdapter,
   IFieldMappingConfig,
   ISearchAdapter,
-  ISearchAdapterDocChunk,
   ISearchAdapterKnnSearchArgs,
   ISearchAdapterKnnSearchResult,
   ISearchAdapterOptions,
@@ -21,6 +21,7 @@ import type {
   ISearchAdapterExactSearchArgs,
   ISearchAdapterExactSearchResult,
 } from '../interfaces'
+import { ActivityIndexDimensionMismatchError } from '../../domain/activity/ActivityIndexError'
 
 interface CacheEntry {
   registry: Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>
@@ -66,6 +67,7 @@ class SearchAdapter implements ISearchAdapter {
         kebabCase: true,
         pascalCase: true,
         metadataPaths: ['metadata'],
+        objectPaths: ['object', 'correlation', 'actor'], // ActivityEvent nested object paths
       },
     }
 
@@ -198,34 +200,291 @@ class SearchAdapter implements ISearchAdapter {
     }
   }
 
+  async ensureIndexTemplate(): Promise<void> {
+    const templateName = 'bl-activity-template'
+    const indexPattern = 'bl-activity-*'
+    const expectedDimension = this.embeddingAdapter.getEmbeddingDimension(
+      this.modelType
+    )
+
+    // Check if template exists and validate dimension
+    try {
+      const templateResponse = await this.client.indices.getIndexTemplate({
+        name: templateName,
+      })
+
+      if (templateResponse.body?.index_templates?.length > 0) {
+        const template = templateResponse.body.index_templates[0]!
+        const templateDef = template.index_template
+        const embeddingMapping =
+          templateDef?.template?.mappings?.properties?.embedding as any
+
+        if (embeddingMapping?.dimension !== undefined) {
+          const actualDimension = embeddingMapping.dimension as number
+          if (actualDimension !== expectedDimension) {
+            throw new ActivityIndexDimensionMismatchError(
+              expectedDimension,
+              actualDimension
+            )
+          }
+        }
+        // Template exists and dimension matches (or no dimension set), no need to recreate
+        return
+      }
+    } catch (error: any) {
+      // If template doesn't exist, we'll create it
+      // If it's a dimension mismatch error, rethrow it
+      if (error instanceof ActivityIndexDimensionMismatchError) {
+        throw error
+      }
+      // If it's a "not found" error, continue to create template
+      if (
+        error?.meta?.body?.error?.type !== 'resource_not_found_exception' &&
+        error?.statusCode !== 404
+      ) {
+        // If it's some other error, rethrow
+        throw error
+      }
+    }
+
+    // Create or update the index template
+    try {
+      await this.client.indices.putIndexTemplate({
+        name: templateName,
+        body: {
+          index_patterns: [indexPattern],
+          template: {
+            settings: {
+              index: {
+                knn: true,
+              },
+            },
+            mappings: {
+              properties: {
+                // Core ActivityEvent fields
+                eventId: {
+                  type: 'keyword',
+                },
+                tenantId: {
+                  type: 'keyword',
+                },
+                occurredAt: {
+                  type: 'date',
+                },
+                category: {
+                  type: 'keyword',
+                },
+                action: {
+                  type: 'keyword',
+                },
+                outcome: {
+                  type: 'keyword',
+                },
+                source: {
+                  type: 'keyword',
+                },
+                schemaVersion: {
+                  type: 'keyword',
+                },
+                // Text fields with keyword subfields for exact matching
+                title: {
+                  type: 'text',
+                  fields: {
+                    keyword: {
+                      type: 'keyword',
+                      ignore_above: 256,
+                    },
+                  },
+                },
+                summary: {
+                  type: 'text',
+                  fields: {
+                    keyword: {
+                      type: 'keyword',
+                      ignore_above: 256,
+                    },
+                  },
+                },
+                message: {
+                  type: 'text',
+                  fields: {
+                    keyword: {
+                      type: 'keyword',
+                      ignore_above: 256,
+                    },
+                  },
+                },
+                // Nested objects - actor
+                actor: {
+                  type: 'object',
+                  properties: {
+                    userId: {
+                      type: 'keyword',
+                    },
+                    emailHash: {
+                      type: 'keyword',
+                    },
+                    serviceName: {
+                      type: 'keyword',
+                    },
+                    role: {
+                      type: 'keyword',
+                    },
+                  },
+                },
+                // Nested objects - object
+                object: {
+                  type: 'object',
+                  properties: {
+                    orderId: {
+                      type: 'keyword',
+                    },
+                    requestId: {
+                      type: 'keyword',
+                    },
+                    sessionId: {
+                      type: 'keyword',
+                    },
+                    ticketId: {
+                      type: 'keyword',
+                    },
+                    resourceId: {
+                      type: 'keyword',
+                    },
+                  },
+                },
+                // Nested objects - correlation
+                correlation: {
+                  type: 'object',
+                  properties: {
+                    traceId: {
+                      type: 'keyword',
+                    },
+                    spanId: {
+                      type: 'keyword',
+                    },
+                    correlationId: {
+                      type: 'keyword',
+                    },
+                    parentEventId: {
+                      type: 'keyword',
+                    },
+                  },
+                },
+                // Metadata fields
+                meta_json: {
+                  type: 'object',
+                  enabled: true,
+                },
+                meta_kv: {
+                  type: 'keyword',
+                },
+                // Typed namespaces (dynamic fields)
+                meta_num: {
+                  type: 'object',
+                  dynamic: 'true' as any,
+                },
+                meta_date: {
+                  type: 'object',
+                  dynamic: 'true' as any,
+                  properties: {
+                    // Dynamic date fields will be added here
+                  },
+                },
+                meta_bool: {
+                  type: 'object',
+                  dynamic: 'true' as any,
+                },
+                meta_kw: {
+                  type: 'object',
+                  dynamic: 'true' as any,
+                },
+                meta_text: {
+                  type: 'object',
+                  dynamic: 'true' as any,
+                },
+                // Vector field
+                embedding: {
+                  type: 'knn_vector',
+                  dimension: expectedDimension,
+                },
+              },
+            },
+          },
+        },
+      })
+    } catch (error: any) {
+      // If template creation fails, check if it's a dimension mismatch
+      // (could happen if template was created between check and creation)
+      if (error?.meta?.body?.error?.type === 'illegal_argument_exception') {
+        const errorMessage = error?.meta?.body?.error?.reason || ''
+        if (errorMessage.includes('dimension')) {
+          // Try to get the actual dimension from the error or existing template
+          try {
+            const templateResponse = await this.client.indices.getIndexTemplate({
+              name: templateName,
+            })
+            if (templateResponse.body?.index_templates?.length > 0) {
+              const template = templateResponse.body.index_templates[0]!
+              const templateDef = template.index_template
+              const embeddingMapping =
+                templateDef?.template?.mappings?.properties?.embedding as any
+              const actualDimension = embeddingMapping?.dimension as number
+              if (actualDimension && actualDimension !== expectedDimension) {
+                throw new ActivityIndexDimensionMismatchError(
+                  expectedDimension,
+                  actualDimension
+                )
+              }
+            }
+          } catch (checkError) {
+            // If we can't check, throw original error
+          }
+        }
+      }
+      throw error
+    }
+  }
+
   async clearIndex(): Promise<void> {
     await this.client.indices.delete({ index: this.index })
   }
 
-  async indexChunks(chunks: ISearchAdapterDocChunk[]): Promise<void> {
-    if (chunks.length === 0) return
-
-    const embeddings = await this.embeddingAdapter.embedMany({
-      chunks: chunks.map((c) => c.message),
-      type: this.modelType,
-    })
+  async indexActivityEvents(
+    documents: IActivityEventDocument[],
+    indexName: string
+  ): Promise<void> {
+    if (documents.length === 0) return
 
     const body: Bulk_RequestBody = []
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i]!
-      const metadata = chunk.metadata ?? {}
-      const tenantId = chunk.tenantId
+    for (const doc of documents) {
+      const metadata = doc.metadata ?? {}
+      const tenantId = doc.tenantId
 
-      // Build the document with all log information
+      // Build the document with all ActivityEvent information
       const document: Record<string, unknown> = {
-        // Core log fields
-        timestamp: chunk.timestamp,
-        level: chunk.level,
-        service: chunk.service,
-        message: chunk.message,
-        embedding: embeddings[i],
+        // Core ActivityEvent fields
+        eventId: doc.eventId,
+        tenantId: doc.tenantId,
+        occurredAt: doc.occurredAt,
+        category: doc.category,
+        action: doc.action,
+        outcome: doc.outcome,
+        source: doc.source,
+        schemaVersion: doc.schemaVersion,
+        embedding: doc.embedding,
 
-        // Always store full metadata as meta_json (safe blob)
+        // Optional text fields
+        ...(doc.title !== undefined && { title: doc.title }),
+        ...(doc.summary !== undefined && { summary: doc.summary }),
+        ...(doc.message !== undefined && { message: doc.message }),
+
+        // Nested objects
+        ...(doc.actor && { actor: doc.actor }),
+        ...(doc.object && { object: doc.object }),
+        ...(doc.correlation && { correlation: doc.correlation }),
+
+        // Always store full metadata as meta_json
         meta_json: metadata,
 
         // Always generate meta_kv array for generic exact match filters
@@ -246,8 +505,7 @@ class SearchAdapter implements ISearchAdapter {
       }
       document.meta_kv = metaKv
 
-      // Get registry for tenant if metadataRegistryLookup is available and tenantId is provided
-      // Uses cache with TTL and automatic eviction
+      // Get registry for tenant if metadataRegistryLookup is available
       const registry = tenantId
         ? await this.getRegistryForTenant(tenantId)
         : undefined
@@ -257,8 +515,6 @@ class SearchAdapter implements ISearchAdapter {
         for (const [key, value] of Object.entries(metadata)) {
           const registryEntry = registry.get(key)
           if (registryEntry) {
-            // Validate type and constraints if provided
-            // For now, we'll do basic type checking
             let typedValue: unknown = value
 
             // Type conversion and validation
@@ -284,27 +540,20 @@ class SearchAdapter implements ISearchAdapter {
                   }
                   break
                 case 'boolean':
-                  // Validate and convert boolean values
-                  // Handle actual boolean values
                   if (typeof value === 'boolean') {
                     typedValue = value
                   } else if (typeof value === 'string') {
-                    // Normalize string to lowercase for comparison
                     const normalized = value.toLowerCase().trim()
-                    // Accept common truthy string representations
                     if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
                       typedValue = true
                     } else if (normalized === 'false' || normalized === '0' || normalized === 'no') {
                       typedValue = false
                     } else {
-                      // Skip invalid boolean string representations
                       continue
                     }
                   } else if (typeof value === 'number') {
-                    // Convert 1/0 to boolean
                     typedValue = value !== 0
                   } else {
-                    // Skip non-boolean, non-string, non-number values
                     continue
                   }
                   break
@@ -322,58 +571,10 @@ class SearchAdapter implements ISearchAdapter {
               continue
             }
           }
-          // Unregistered keys do NOT create typed fields (prevents mapping explosion)
         }
       }
 
-      // Keep existing flattening for backward compatibility (can be removed later if not needed)
-      // Automatically flatten all top-level metadata fields (except objects/arrays) into document
-      for (const [key, value] of Object.entries(metadata)) {
-        if (
-          value !== null &&
-          value !== undefined &&
-          typeof value !== 'object' &&
-          !Array.isArray(value)
-        ) {
-          // Only flatten if not already in typed namespace
-          const typedKey = `meta_num.${key}`
-          const typedKey2 = `meta_date.${key}`
-          const typedKey3 = `meta_bool.${key}`
-          const typedKey4 = `meta_kw.${key}`
-          const typedKey5 = `meta_text.${key}`
-          if (
-            !(typedKey in document) &&
-            !(typedKey2 in document) &&
-            !(typedKey3 in document) &&
-            !(typedKey4 in document) &&
-            !(typedKey5 in document)
-          ) {
-            document[key] = value
-          }
-        }
-      }
-
-      // Flatten error fields
-      if (metadata.error && typeof metadata.error === 'object') {
-        const error = metadata.error as Record<string, unknown>
-        if (error.type) document.error_type = error.type
-        if (error.code) document.error_code = error.code
-        if (error.retriable !== undefined)
-          document.error_retriable = error.retriable
-      }
-
-      // Flatten feature flag fields
-      if (
-        metadata.feature_flags &&
-        typeof metadata.feature_flags === 'object'
-      ) {
-        const flags = metadata.feature_flags as Record<string, unknown>
-        document.new_checkout_enabled = flags.new_checkout_enabled ?? false
-        document.express_checkout_enabled =
-          flags.express_checkout_enabled ?? false
-      }
-
-      body.push({ index: { _index: this.index, _id: chunk.id } })
+      body.push({ index: { _index: indexName, _id: doc.eventId } })
       body.push(document)
     }
 
@@ -382,7 +583,7 @@ class SearchAdapter implements ISearchAdapter {
       const items = resp.body.items ?? []
       const failures = items.filter((x: any) => x.index?.error)
       throw new Error(
-        `Bulk indexing had errors: ${JSON.stringify(
+        `Bulk indexing ActivityEvents had errors: ${JSON.stringify(
           failures.slice(0, 3),
           null,
           2
@@ -569,7 +770,33 @@ class SearchAdapter implements ISearchAdapter {
       }
     }
 
-    // 5. Deduplicate and return
+    // 5. Add nested object paths (for ActivityEvents: object.*, correlation.*, actor.*)
+    const objectPaths = conventions.objectPaths ?? []
+    for (const objectPath of objectPaths) {
+      for (const fieldName of fieldNames) {
+        paths.push(`${objectPath}.${fieldName}`)
+      }
+    }
+
+    // 6. Handle special identifier type mappings
+    // Map common identifier types to their ActivityEvent nested object locations
+    const identifierTypeToObjectField: Record<string, string> = {
+      shipmentId: 'resourceId', // shipmentId maps to object.resourceId
+    }
+    const mappedFieldName = identifierTypeToObjectField[identifierType]
+    if (mappedFieldName) {
+      for (const objectPath of objectPaths) {
+        const mappedFieldNames = [
+          ...(conventions.camelCase ? [this.toCamelCase(mappedFieldName)] : []),
+          ...(conventions.snakeCase ? [this.toSnakeCase(mappedFieldName)] : []),
+        ]
+        for (const mappedName of mappedFieldNames) {
+          paths.push(`${objectPath}.${mappedName}`)
+        }
+      }
+    }
+
+    // 7. Deduplicate and return
     return [...new Set(paths)]
   }
 
@@ -579,6 +806,7 @@ class SearchAdapter implements ISearchAdapter {
     const { identifier, identifierType } = args
 
     // Generate field paths based on configuration
+    // This already includes nested object paths (object.*, correlation.*, actor.*) via generateFieldPaths
     const fields = this.generateFieldPaths(identifierType)
 
     // Build a query that searches across all possible field locations
@@ -614,23 +842,27 @@ class SearchAdapter implements ISearchAdapter {
       query,
       sort: [
         {
-          timestamp: {
+          occurredAt: {
             order: 'asc' as const,
           },
         },
       ],
     }
 
+    // For ActivityEvents, always search across all daily indices matching bl-activity-*
+    // Also search the configured index in case there are other document types
+    const searchIndices = ['bl-activity-*', this.index]
+
     const resp = await this.client.search({
-      index: this.index,
+      index: searchIndices,
       body,
     })
 
     const hits = (resp.body?.hits?.hits ?? []).map((h: any) => ({
       id: h._id as string,
-      timestamp: h._source?.timestamp as string,
+      timestamp: (h._source?.occurredAt || h._source?.timestamp) as string,
       level: h._source?.level as string,
-      service: h._source?.service as string,
+      service: h._source?.source || h._source?.service as string,
       message: h._source?.message as string,
       metadata: h._source as Record<string, unknown>,
     }))
