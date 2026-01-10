@@ -1,7 +1,7 @@
 import {
   createSearchAdapter,
+  IActivityEventDocument,
   ISearchAdapter,
-  ISearchAdapterDocChunk,
   ISearchAdapterKnnSearchArgs,
   ISearchAdapterKnnSearchResult,
 } from '../../adapters'
@@ -20,12 +20,19 @@ export class IndexingRepository {
     return await this.searchAdapter.ensureIndex()
   }
 
+  async ensureIndexTemplate(): Promise<void> {
+    return await this.searchAdapter.ensureIndexTemplate()
+  }
+
   async clearIndex(): Promise<void> {
     return await this.searchAdapter.clearIndex()
   }
 
-  async indexChunks(chunks: ISearchAdapterDocChunk[]): Promise<void> {
-    return await this.searchAdapter.indexChunks(chunks)
+  async indexActivityEvents(
+    documents: IActivityEventDocument[],
+    indexName: string
+  ): Promise<void> {
+    return await this.searchAdapter.indexActivityEvents(documents, indexName)
   }
 
   async knnSearch(

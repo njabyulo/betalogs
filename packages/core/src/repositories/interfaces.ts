@@ -2,6 +2,7 @@ import { ToolSet } from 'ai'
 import type { z } from 'zod'
 import type {
   AgentAdapter,
+  IActivityEventDocument,
   ICreateAgentAdapterOptions,
   ICreateSearchAdapterOptions,
   ICreateTextAdapterOptions,
@@ -21,8 +22,12 @@ export type {
 } from '../adapters'
 export interface IIndexingRepository {
   ensureIndex(): Promise<void>
+  ensureIndexTemplate(): Promise<void>
   clearIndex(): Promise<void>
-  indexChunks(chunks: ISearchAdapterDocChunk[]): Promise<void>
+  indexActivityEvents(
+    documents: IActivityEventDocument[],
+    indexName: string
+  ): Promise<void>
   knnSearch(
     args: ISearchAdapterKnnSearchArgs
   ): Promise<ISearchAdapterKnnSearchResult[]>
