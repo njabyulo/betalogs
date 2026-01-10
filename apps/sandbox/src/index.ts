@@ -3,7 +3,7 @@ import {
   createIndexingService,
 } from '@betalogs/core/services'
 import 'dotenv/config'
-import { SYSTEM_PROMPT } from './prompts'
+import { getSystemPrompt } from './prompts'
 import { logs } from './data'
 import { StoryOutputSchema } from './schemas'
 
@@ -41,7 +41,7 @@ const main = async () => {
       username: process.env.OPENSEARCH_USERNAME,
       password: process.env.OPENSEARCH_PASSWORD,
     },
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt: getSystemPrompt(),
     tools: new Set(['knowledge-base-search', 'rewrite-query', 'story-search']),
     activeModelType: 'medium',
     schema: StoryOutputSchema,

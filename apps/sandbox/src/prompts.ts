@@ -27,8 +27,8 @@ The user will provide a query, and you will:
 - Q&A Mode: Short, direct, actionable, cited responses (NOT used when StoryOutputSchema is provided)
 `
 
-// Essential Context
-const essentialContext = `
+// Essential Context (function to evaluate date at runtime)
+const getEssentialContext = () => `
 ## ESSENTIAL CONTEXT
 
 For context, today's date is: ${new Date().toISOString().split('T')[0]}
@@ -159,14 +159,14 @@ const workflowSelection = `
 - Do NOT generate COE format when an identifier is present
 `
 
-export const SYSTEM_PROMPT = `
+export const getSystemPrompt = () => `
 ## Betalogs Activity Search, Story, COE, & Q&A Agent Specification
 
 ${highLevelDefinition}
 
 ${generalInstructions}
 
-${essentialContext}
+${getEssentialContext()}
 
 ${toolDescriptions}
 
@@ -387,3 +387,4 @@ Every factual claim must include citations:
 - Never mention tools or internal steps in your final output
 - If evidence is insufficient, respond exactly: "I don't have enough information to resolve your query"
 `
+
