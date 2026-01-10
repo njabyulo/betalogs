@@ -14,6 +14,8 @@ import {
   ISearchAdapterOptions,
   TSearchModelType,
 } from '../interfaces'
+import type { MatchQuery, QueryContainer, TermQuery } from '@opensearch-project/opensearch/api/_types/_common.query_dsl.js'
+import type { FieldValue } from '@opensearch-project/opensearch/api/_types/_common.js'
 
 class SearchAdapter implements ISearchAdapter {
   private embeddingAdapter: IEmbeddingAdapter
@@ -28,9 +30,9 @@ class SearchAdapter implements ISearchAdapter {
       auth:
         options.opensearch.username && options.opensearch.password
           ? {
-              username: options.opensearch.username,
-              password: options.opensearch.password,
-            }
+            username: options.opensearch.username,
+            password: options.opensearch.password,
+          }
           : undefined,
       ssl: { rejectUnauthorized: false },
     })
@@ -110,21 +112,17 @@ class SearchAdapter implements ISearchAdapter {
         metadata: metadata,
       }
 
-      // Flatten commonly queried fields from metadata for easier filtering/aggregation
-      if (metadata.user_id) document.user_id = metadata.user_id
-      if (metadata.user_email) document.user_email = metadata.user_email
-      if (metadata.user_subscription)
-        document.user_subscription = metadata.user_subscription
-      if (metadata.deployment_id)
-        document.deployment_id = metadata.deployment_id
-      if (metadata.service_version)
-        document.service_version = metadata.service_version
-      if (metadata.region) document.region = metadata.region
-      if (metadata.request_id) document.request_id = metadata.request_id
-      if (metadata.checkout_id) document.checkout_id = metadata.checkout_id
-      if (metadata.order_id) document.order_id = metadata.order_id
-      if (metadata.status_code) document.status_code = metadata.status_code
-      if (metadata.duration_ms) document.duration_ms = metadata.duration_ms
+      // Automatically flatten all top-level metadata fields (except objects/arrays) into document
+      for (const [key, value] of Object.entries(metadata)) {
+        if (
+          value !== null &&
+          value !== undefined &&
+          typeof value !== 'object' &&
+          !Array.isArray(value)
+        ) {
+          document[key] = value
+        }
+      }
 
       // Flatten error fields
       if (metadata.error && typeof metadata.error === 'object') {
@@ -176,21 +174,34 @@ class SearchAdapter implements ISearchAdapter {
 
     // Build filter clauses from the filter parameter
     // Support filtering by flattened fields (user_id, deployment_id, etc.) and nested metadata
-    const filterClauses: any[] = []
+    const filterClauses: QueryContainer[] = []
     if (args.filter) {
       for (const [key, value] of Object.entries(args.filter)) {
         if (value !== null && value !== undefined) {
           // Support exact matches for flattened fields and nested metadata
           // Try flattened field first (e.g., user_id, deployment_id)
           // Then try nested metadata path (e.g., metadata.user_id)
+
+          const termQuery: TermQuery = {
+            value: value as FieldValue,
+            case_insensitive: true,
+          }
+          const matchQuery: MatchQuery = {
+            query: value as FieldValue,
+            analyzer: 'standard',
+            auto_generate_synonyms_phrase_query: true,
+            cutoff_frequency: 0.001,
+            fuzziness: 'AUTO',
+            zero_terms_query: 'ALL',
+          }
           filterClauses.push({
             bool: {
               should: [
-                { term: { [key]: value } },
-                { term: { [`metadata.${key}`]: value } },
+                { term: { [key]: termQuery } },
+                { term: { [`metadata.${key}`]: termQuery } },
                 // Also support match for text fields
-                { match: { [key]: value } },
-                { match: { [`metadata.${key}`]: value } },
+                { match: { [key]: matchQuery } },
+                { match: { [`metadata.${key}`]: matchQuery } },
               ],
               minimum_should_match: 1,
             },
@@ -200,7 +211,7 @@ class SearchAdapter implements ISearchAdapter {
     }
 
     // Build the query: combine KNN search with filters
-    const query: any = {
+    const query: QueryContainer = {
       bool: {
         must: [
           {
@@ -217,7 +228,7 @@ class SearchAdapter implements ISearchAdapter {
 
     // Add filter clauses if any (filters are applied after KNN retrieval)
     if (filterClauses.length > 0) {
-      query.bool.filter = filterClauses
+      query.bool!.filter = filterClauses
     }
 
     const body: Search_RequestBody = {

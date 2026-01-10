@@ -3,8 +3,13 @@ import type {
   ISearchAdapterKnnSearchArgs,
   ISearchAdapterKnnSearchResult,
 } from '../adapters/interfaces'
+import type {
+  ICreateChatRepositoryOptions,
+  ICreateIndexingRepositoryOptions,
+} from '../repositories/interfaces'
+
+import type { ChatRepository } from '../repositories/chat'
 import type { IndexingRepository } from '../repositories/indexing'
-import type { ICreateIndexingRepositoryOptions } from '../repositories/interfaces'
 
 export type {
   ISearchAdapterDocChunk,
@@ -12,8 +17,10 @@ export type {
   ISearchAdapterKnnSearchResult,
 } from '../adapters/interfaces'
 export type { IndexingRepository } from '../repositories/indexing'
-
-export type { ICreateIndexingRepositoryOptions } from '../repositories/interfaces'
+export type {
+  IChatRepository,
+  ICreateIndexingRepositoryOptions,
+} from '../repositories/interfaces'
 
 export interface IIndexingService {
   ensureIndex(): Promise<void>
@@ -23,10 +30,16 @@ export interface IIndexingService {
     args: ISearchAdapterKnnSearchArgs
   ): Promise<ISearchAdapterKnnSearchResult[]>
 }
-
 export interface IIndexingServiceOptions {
   indexingRepository: IndexingRepository
 }
-
 export interface ICreateIndexingServiceOptions
-  extends ICreateIndexingRepositoryOptions {}
+  extends ICreateIndexingRepositoryOptions { }
+export interface IChatService {
+  chat(prompt: string): Promise<string>
+}
+export interface IChatServiceOptions {
+  chatRepository: ChatRepository
+}
+export interface ICreateChatServiceOptions
+  extends ICreateChatRepositoryOptions { }
