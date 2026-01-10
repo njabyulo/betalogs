@@ -4,7 +4,7 @@ import {
 } from '@betalogs/core/services'
 import 'dotenv/config'
 import { getSystemPrompt } from './prompts'
-import { logs } from './data'
+import { activityEvents } from './data'
 import { StoryOutputSchema } from './schemas'
 
 const main = async () => {
@@ -47,12 +47,13 @@ const main = async () => {
     schema: StoryOutputSchema,
   })
 
-  // await indexingService.clearIndex();
-  // await indexingService.ensureIndex();
+  // Ensure the ActivityEvent index template exists
+  await indexingService.ensureIndexTemplate();
 
-  // await indexingService.indexChunks(logs);
+  // Index ActivityEvents (will create daily indices automatically)
+  await indexingService.indexActivityEvents(activityEvents);
 
-  const result = await chatService.chat('root cause for req_abc123')
+  const result = await chatService.chat('timeline for order ord_uvw789')
   // const result = await chatService.chat('What potential issues could be causing the checkout failure?')
   console.log(JSON.stringify(result, null, 2))
 
