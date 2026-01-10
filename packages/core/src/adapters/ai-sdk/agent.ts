@@ -86,16 +86,47 @@ export class AgentAdapter<D, T extends ToolSet, TSchema extends z.ZodTypeAny | u
     }
 
     // Strategy 2: Find first complete JSON object (balanced braces)
+    // Properly handles braces inside string values by tracking string state
     let braceCount = 0
     let startIdx = -1
+    let inString = false
+    let stringChar: '"' | "'" | null = null
+    let escapeNext = false
+
     for (let i = 0; i < trimmed.length; i++) {
-      if (trimmed[i] === '{') {
-        if (braceCount === 0) startIdx = i
-        braceCount++
-      } else if (trimmed[i] === '}') {
-        braceCount--
-        if (braceCount === 0 && startIdx !== -1) {
-          return trimmed.substring(startIdx, i + 1)
+      const char = trimmed[i]
+
+      if (escapeNext) {
+        escapeNext = false
+        continue
+      }
+
+      if (char === '\\' && inString) {
+        escapeNext = true
+        continue
+      }
+
+      if ((char === '"' || char === "'") && !escapeNext) {
+        if (!inString) {
+          inString = true
+          stringChar = char
+        } else if (char === stringChar) {
+          inString = false
+          stringChar = null
+        }
+        continue
+      }
+
+      // Only count braces when not inside a string
+      if (!inString) {
+        if (char === '{') {
+          if (braceCount === 0) startIdx = i
+          braceCount++
+        } else if (char === '}') {
+          braceCount--
+          if (braceCount === 0 && startIdx !== -1) {
+            return trimmed.substring(startIdx, i + 1)
+          }
         }
       }
     }

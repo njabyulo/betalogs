@@ -20,3 +20,4 @@ catalog:
   typescript: ^5.9.3
   vitest: ^4.0.16
   zod: ^4.3.5
+  zod-to-json-schema: ^3.25.1
