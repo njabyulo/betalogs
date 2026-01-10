@@ -7,6 +7,7 @@ import { createEmbeddingAdapter } from '../ai-sdk'
 import {
   ICreateSearchAdapterOptions,
   IEmbeddingAdapter,
+  IFieldMappingConfig,
   ISearchAdapter,
   ISearchAdapterDocChunk,
   ISearchAdapterKnnSearchArgs,
@@ -16,12 +17,17 @@ import {
 } from '../interfaces'
 import type { MatchQuery, QueryContainer, TermQuery } from '@opensearch-project/opensearch/api/_types/_common.query_dsl.js'
 import type { FieldValue } from '@opensearch-project/opensearch/api/_types/_common.js'
+import type {
+  ISearchAdapterExactSearchArgs,
+  ISearchAdapterExactSearchResult,
+} from '../interfaces'
 
 class SearchAdapter implements ISearchAdapter {
   private embeddingAdapter: IEmbeddingAdapter
   private client: Client
   private index: string
   private modelType: TSearchModelType
+  private fieldMappingConfig: IFieldMappingConfig
 
   constructor(options: ISearchAdapterOptions) {
     this.embeddingAdapter = options.embeddingAdapter
@@ -39,6 +45,30 @@ class SearchAdapter implements ISearchAdapter {
 
     this.index = options.opensearch.index
     this.modelType = options.modelType
+
+    // Set default field mapping configuration and merge with user-provided config
+    const defaultConfig: IFieldMappingConfig = {
+      explicit: {},
+      conventions: {
+        snakeCase: true,
+        camelCase: true,
+        kebabCase: true,
+        pascalCase: true,
+        metadataPaths: ['metadata'],
+      },
+    }
+
+    this.fieldMappingConfig = {
+      explicit: {
+        ...defaultConfig.explicit,
+        ...(options.fieldMapping?.explicit ?? {}),
+      },
+      conventions: {
+        ...defaultConfig.conventions,
+        ...(options.fieldMapping?.conventions ?? {}),
+      },
+    }
+
     this.ensureIndex()
   }
 
@@ -253,6 +283,161 @@ class SearchAdapter implements ISearchAdapter {
 
     return hits
   }
+
+  /**
+   * Convert camelCase or PascalCase to snake_case
+   * e.g., "orderId" -> "order_id", "OrderId" -> "order_id"
+   */
+  private toSnakeCase(str: string): string {
+    return str
+      .replace(/([A-Z])/g, '_$1')
+      .toLowerCase()
+      .replace(/^_/, '')
+  }
+
+  /**
+   * Convert to camelCase
+   * Handles inputs that are already camelCase, snake_case, kebab-case, or PascalCase
+   * e.g., "orderId" -> "orderId", "order_id" -> "orderId", "order-id" -> "orderId"
+   */
+  private toCamelCase(str: string): string {
+    // If already camelCase (starts with lowercase), return as-is
+    if (/^[a-z]/.test(str) && !/[-_]/.test(str)) {
+      return str
+    }
+    return str
+      .replace(/[-_](.)/g, (_, char) => char.toUpperCase())
+      .replace(/^[A-Z]/, (char) => char.toLowerCase())
+  }
+
+  /**
+   * Convert to kebab-case
+   * e.g., "orderId" -> "order-id", "order_id" -> "order-id"
+   */
+  private toKebabCase(str: string): string {
+    return str
+      .replace(/([A-Z])/g, '-$1')
+      .toLowerCase()
+      .replace(/^[-_]/, '')
+      .replace(/[-_]/g, '-')
+  }
+
+  /**
+   * Convert to PascalCase
+   * e.g., "orderId" -> "OrderId", "order_id" -> "OrderId"
+   */
+  private toPascalCase(str: string): string {
+    const camel = this.toCamelCase(str)
+    return camel.charAt(0).toUpperCase() + camel.slice(1)
+  }
+
+  /**
+   * Generate field paths for a given identifier type based on configuration
+   */
+  private generateFieldPaths(identifierType: string): string[] {
+    const paths: string[] = []
+
+    // 1. Check explicit mappings first (highest priority)
+    if (this.fieldMappingConfig.explicit?.[identifierType]) {
+      return this.fieldMappingConfig.explicit[identifierType]
+    }
+
+    // 2. Generate paths based on enabled conventions
+    const conventions = this.fieldMappingConfig.conventions ?? {}
+    const fieldNames: string[] = []
+
+    if (conventions.snakeCase) {
+      fieldNames.push(this.toSnakeCase(identifierType))
+    }
+    if (conventions.camelCase) {
+      fieldNames.push(this.toCamelCase(identifierType))
+    }
+    if (conventions.kebabCase) {
+      fieldNames.push(this.toKebabCase(identifierType))
+    }
+    if (conventions.pascalCase) {
+      fieldNames.push(this.toPascalCase(identifierType))
+    }
+
+    // 3. Add root-level paths
+    paths.push(...fieldNames)
+
+    // 4. Add metadata-prefixed paths
+    const metadataPaths = conventions.metadataPaths ?? []
+    for (const metadataPath of metadataPaths) {
+      for (const fieldName of fieldNames) {
+        paths.push(`${metadataPath}.${fieldName}`)
+      }
+    }
+
+    // 5. Deduplicate and return
+    return [...new Set(paths)]
+  }
+
+  async exactSearch(
+    args: ISearchAdapterExactSearchArgs
+  ): Promise<ISearchAdapterExactSearchResult[]> {
+    const { identifier, identifierType } = args
+
+    // Generate field paths based on configuration
+    const fields = this.generateFieldPaths(identifierType)
+
+    // Build a query that searches across all possible field locations
+    const shouldClauses = fields.flatMap((field) => [
+      {
+        term: {
+          [field]: {
+            value: identifier,
+            case_insensitive: true,
+          },
+        },
+      },
+      {
+        match: {
+          [field]: {
+            query: identifier,
+            operator: 'and' as const,
+          },
+        },
+      },
+    ])
+
+    const query: QueryContainer = {
+      bool: {
+        should: shouldClauses,
+        minimum_should_match: 1,
+      },
+    }
+
+    const body: Search_RequestBody = {
+      size: 1000, // Get all matching events (reasonable limit)
+      _source: true,
+      query,
+      sort: [
+        {
+          timestamp: {
+            order: 'asc' as const,
+          },
+        },
+      ],
+    }
+
+    const resp = await this.client.search({
+      index: this.index,
+      body,
+    })
+
+    const hits = (resp.body?.hits?.hits ?? []).map((h: any) => ({
+      id: h._id as string,
+      timestamp: h._source?.timestamp as string,
+      level: h._source?.level as string,
+      service: h._source?.service as string,
+      message: h._source?.message as string,
+      metadata: h._source as Record<string, unknown>,
+    }))
+
+    return hits
+  }
 }
 
 export const createSearchAdapter = (options: ICreateSearchAdapterOptions) => {
@@ -282,5 +467,6 @@ export const createSearchAdapter = (options: ICreateSearchAdapterOptions) => {
     embeddingAdapter,
     modelType,
     opensearch: options.opensearch,
+    fieldMapping: options.fieldMapping,
   })
 }

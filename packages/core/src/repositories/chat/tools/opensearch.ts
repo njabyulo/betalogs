@@ -103,7 +103,7 @@ export const createStorySearchTool = (
 
   return tool({
     description:
-      'Exact search for all events related to a specific identifier (orderId, traceId, requestId, email, checkoutId, userId, emailHash). Use this when the user provides a specific identifier to retrieve the complete timeline of events. Returns all matching events sorted chronologically.',
+      'Exact search for all events related to a specific identifier. Common types include: orderId, shipmentId, ticketId, traceId, requestId, email, checkoutId, userId, emailHash. Use this when the user provides a specific identifier to retrieve the complete timeline of events. Returns all matching events sorted chronologically.',
     inputSchema: z.object({
       identifier: z
         .string()
@@ -111,21 +111,13 @@ export const createStorySearchTool = (
           'The identifier value to search for (e.g., "order_ord123", "req_abc456", "alice@example.com")'
         ),
       identifierType: z
-        .enum([
-          'orderId',
-          'traceId',
-          'email',
-          'requestId',
-          'checkoutId',
-          'userId',
-          'emailHash',
-        ])
-        .describe('The type of identifier being searched'),
+        .string()
+        .describe('The type of identifier being searched (e.g., "orderId", "requestId", "email", etc.)'),
     }),
     execute: async ({ identifier, identifierType }) => {
       const results = await search.exactSearch({
         identifier,
-        identifierType: identifierType as ISearchAdapterExactSearchArgs['identifierType'],
+        identifierType,
       })
       return results
     },

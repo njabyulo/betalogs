@@ -45,6 +45,19 @@ export interface IEmbeddingAdapter {
 
 export type TSearchModelType = keyof IEmbeddingAdapterConfig['options']['model']
 
+export interface IFieldMappingConventions {
+  snakeCase?: boolean      // orderId -> order_id
+  camelCase?: boolean     // orderId -> orderId
+  kebabCase?: boolean     // orderId -> order-id
+  pascalCase?: boolean    // orderId -> OrderId
+  metadataPaths?: string[] // e.g., ['metadata', 'context', 'attributes']
+}
+
+export interface IFieldMappingConfig {
+  explicit?: Record<string, string[]>  // Custom mappings per identifier type
+  conventions?: IFieldMappingConventions
+}
+
 export interface ISearchAdapterOptions {
   embeddingAdapter: IEmbeddingAdapter
   modelType: TSearchModelType
@@ -54,6 +67,7 @@ export interface ISearchAdapterOptions {
     username?: string
     password?: string
   }
+  fieldMapping?: IFieldMappingConfig
 }
 
 export interface ICreateSearchAdapterOptions {
@@ -64,6 +78,7 @@ export interface ICreateSearchAdapterOptions {
     username?: string
     password?: string
   }
+  fieldMapping?: IFieldMappingConfig
 }
 
 export interface ISearchAdapterDocChunk {
@@ -90,7 +105,7 @@ export interface ISearchAdapterKnnSearchResult {
 
 export interface ISearchAdapterExactSearchArgs {
   identifier: string
-  identifierType: 'orderId' | 'traceId' | 'email' | 'requestId' | 'checkoutId' | 'userId' | 'emailHash'
+  identifierType: string
 }
 
 export interface ISearchAdapterExactSearchResult {

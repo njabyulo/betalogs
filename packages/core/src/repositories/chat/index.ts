@@ -27,7 +27,7 @@ export class ChatRepository<D, T extends ToolSet, TSchema extends z.ZodTypeAny> 
       prompt,
       type: 'medium',
     })
-    if (!result.output) {
+    if (result.output === undefined) {
       throw new Error('Expected structured output but received none. Check that schema is properly configured.')
     }
     return result.output
