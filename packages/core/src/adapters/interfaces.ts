@@ -51,6 +51,7 @@ export interface IFieldMappingConventions {
   kebabCase?: boolean     // orderId -> order-id
   pascalCase?: boolean    // orderId -> OrderId
   metadataPaths?: string[] // e.g., ['metadata', 'context', 'attributes']
+  objectPaths?: string[]   // e.g., ['object', 'correlation', 'actor'] - nested object paths for ActivityEvents
 }
 
 export interface IFieldMappingConfig {
@@ -127,10 +128,49 @@ export interface ISearchAdapterExactSearchResult {
   metadata: Record<string, unknown>
 }
 
+export interface IActivityEventDocument {
+  eventId: string
+  tenantId: string
+  occurredAt: string
+  category: string
+  action: string
+  outcome: string
+  source: string
+  schemaVersion: string
+  title?: string
+  summary?: string
+  message?: string
+  actor?: {
+    userId?: string
+    emailHash?: string
+    serviceName?: string
+    role?: string
+  }
+  object?: {
+    orderId?: string
+    requestId?: string
+    sessionId?: string
+    ticketId?: string
+    resourceId?: string
+  }
+  correlation?: {
+    traceId?: string
+    spanId?: string
+    correlationId?: string
+    parentEventId?: string
+  }
+  metadata?: Record<string, unknown>
+  embedding: number[]
+}
+
 export interface ISearchAdapter {
   ensureIndex(): Promise<void>
+  ensureIndexTemplate(): Promise<void>
   clearIndex(): Promise<void>
-  indexChunks(chunks: ISearchAdapterDocChunk[]): Promise<void>
+  indexActivityEvents(
+    documents: IActivityEventDocument[],
+    indexName: string
+  ): Promise<void>
   knnSearch(
     args: ISearchAdapterKnnSearchArgs
   ): Promise<ISearchAdapterKnnSearchResult[]>
