@@ -9,6 +9,7 @@ import type {
   ICreateIndexingRepositoryOptions,
 } from '../repositories/interfaces'
 import type { z } from 'zod'
+import type { TActivityEvent } from '../domain/activity/ActivityEvent'
 
 import type { IndexingRepository } from '../repositories/indexing'
 
@@ -25,14 +26,24 @@ export type {
 
 export interface IIndexingService {
   ensureIndex(): Promise<void>
+  ensureIndexTemplate(): Promise<void>
   clearIndex(): Promise<void>
-  indexChunks(chunks: ISearchAdapterDocChunk[]): Promise<void>
+  indexActivityEvents(
+    events: TActivityEvent[],
+    options?: {
+      embeddingSource?: (event: TActivityEvent) => string
+    }
+  ): Promise<void>
   knnSearch(
     args: ISearchAdapterKnnSearchArgs
   ): Promise<ISearchAdapterKnnSearchResult[]>
 }
+import type { IEmbeddingAdapter, TSearchModelType } from '../adapters/interfaces'
+
 export interface IIndexingServiceOptions {
   indexingRepository: IndexingRepository
+  embeddingAdapter: IEmbeddingAdapter
+  modelType: TSearchModelType
 }
 export interface ICreateIndexingServiceOptions
   extends ICreateIndexingRepositoryOptions { }
