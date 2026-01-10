@@ -108,6 +108,9 @@ importers:
       '@ai-sdk/google':
         specifier: 'catalog:'
         version: 3.0.5(zod@4.3.5)
+      '@betalogs/core':
+        specifier: 'workspace:'
+        version: link:../../packages/core
       '@opensearch-project/opensearch':
         specifier: 'catalog:'
         version: 3.5.1
@@ -195,6 +198,15 @@ importers:
 
   packages/core:
     dependencies:
+      '@ai-sdk/google':
+        specifier: 'catalog:'
+        version: 3.0.5(zod@4.3.5)
+      '@opensearch-project/opensearch':
+        specifier: 'catalog:'
+        version: 3.5.1
+      ai:
+        specifier: 'catalog:'
+        version: 6.0.16(zod@4.3.5)
       zod:
         specifier: 'catalog:'
         version: 4.3.5

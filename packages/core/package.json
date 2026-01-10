@@ -1,0 +1,33 @@
+{
+  "name": "@betalogs/core",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.mjs",
+      "require": "./dist/services/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "pnpm lint:type && pnpm lint:code",
+    "lint:type": "tsc --noEmit",
+    "lint:code": "pnpm exec eslint . --max-warnings 0",
+    "clean": "rm -rf dist .turbo",
+    "clean:all": "pnpm clean && rm -rf node_modules"
+  },
+  "dependencies": {
+    "@opensearch-project/opensearch": "catalog:",
+    "@ai-sdk/google": "catalog:",
+    "ai": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

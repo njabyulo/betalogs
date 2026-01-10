@@ -1,0 +1,17 @@
+{
+  "name": "sandbox",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "clean": "rm -rf dist .turbo",
+    "clean:index": "pnpm tsx ./src/script.ts",
+    "clean:all": "pnpm clean && rm -rf node_modules"
+  },
+  "dependencies": {
+    "@betalogs/core": "workspace:",
+    "dotenv": "catalog:"
+  }
+}
