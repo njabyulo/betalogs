@@ -1,0 +1,24 @@
+{
+  "name": "functions",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "catalog:",
+    "zod": "catalog:",
+    "@hono/zod-validator": "catalog:",
+    "@betalogs/core": "workspace:*",
+    "@betalogs/database": "workspace:*",
+    "@betalogs/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.27",
+    "esbuild": "^0.24.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}

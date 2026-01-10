@@ -44,3 +44,32 @@ export interface IChatServiceOptions<TSchema extends z.ZodTypeAny> {
 }
 export interface ICreateChatServiceOptions<TSchema extends z.ZodTypeAny>
   extends ICreateChatRepositoryOptions<TSchema> { }
+
+import type {
+  TMetadataRegistryEntry,
+  TMetadataType,
+} from '@betalogs/shared/types'
+import type {
+  IMetadataRegistryRepository,
+  ICreateMetadataRegistryRepositoryOptions,
+} from '../repositories/interfaces'
+
+export interface IMetadataRegistryService {
+  listKeys(tenantId: string): Promise<TMetadataRegistryEntry[]>
+  registerKey(
+    tenantId: string,
+    key: string,
+    type: TMetadataType,
+    constraintsJson?: Record<string, unknown>,
+    promoteTo?: string
+  ): Promise<TMetadataRegistryEntry>
+  deleteKey(tenantId: string, key: string): Promise<void>
+  getRegistryForTenant(tenantId: string): Promise<Map<string, TMetadataRegistryEntry>>
+}
+
+export interface IMetadataRegistryServiceOptions {
+  metadataRegistryRepository: IMetadataRegistryRepository
+}
+
+export interface ICreateMetadataRegistryServiceOptions
+  extends ICreateMetadataRegistryRepositoryOptions { }

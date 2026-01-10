@@ -63,3 +63,24 @@ export interface ICreateChatRepositoryOptions<TSchema extends z.ZodTypeAny>
   systemPrompt: string
   schema: TSchema
 }
+
+import type {
+  TMetadataRegistryEntry,
+  TCreateMetadataRegistryEntry,
+} from '@betalogs/shared/types'
+import type { Database } from '@betalogs/database/connection'
+
+export interface IMetadataRegistryRepository {
+  findByTenantId(tenantId: string): Promise<TMetadataRegistryEntry[]>
+  findByKey(tenantId: string, key: string): Promise<TMetadataRegistryEntry | null>
+  create(entry: TCreateMetadataRegistryEntry): Promise<TMetadataRegistryEntry>
+  delete(tenantId: string, key: string): Promise<void>
+}
+
+export interface IMetadataRegistryRepositoryOptions {
+  db: Database
+}
+
+export interface ICreateMetadataRegistryRepositoryOptions {
+  db: Database
+}

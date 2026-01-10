@@ -58,6 +58,14 @@ export interface IFieldMappingConfig {
   conventions?: IFieldMappingConventions
 }
 
+/**
+ * Port for metadata registry lookup (adapter boundary)
+ * Adapters depend on this port, not on services directly
+ */
+export interface IMetadataRegistryLookupPort {
+  getRegistryForTenant(tenantId: string): Promise<Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>>
+}
+
 export interface ISearchAdapterOptions {
   embeddingAdapter: IEmbeddingAdapter
   modelType: TSearchModelType
@@ -68,6 +76,7 @@ export interface ISearchAdapterOptions {
     password?: string
   }
   fieldMapping?: IFieldMappingConfig
+  metadataRegistryLookup?: IMetadataRegistryLookupPort
 }
 
 export interface ICreateSearchAdapterOptions {
@@ -88,6 +97,7 @@ export interface ISearchAdapterDocChunk {
   service: string
   message: string
   metadata?: Record<string, unknown>
+  tenantId?: string
 }
 
 export interface ISearchAdapterKnnSearchArgs {

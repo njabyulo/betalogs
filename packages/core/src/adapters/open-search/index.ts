@@ -28,6 +28,8 @@ class SearchAdapter implements ISearchAdapter {
   private index: string
   private modelType: TSearchModelType
   private fieldMappingConfig: IFieldMappingConfig
+  private metadataRegistryLookup?: ISearchAdapterOptions['metadataRegistryLookup']
+  private registryCache: Map<string, Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>> = new Map()
 
   constructor(options: ISearchAdapterOptions) {
     this.embeddingAdapter = options.embeddingAdapter
@@ -45,6 +47,7 @@ class SearchAdapter implements ISearchAdapter {
 
     this.index = options.opensearch.index
     this.modelType = options.modelType
+    this.metadataRegistryLookup = options.metadataRegistryLookup
 
     // Set default field mapping configuration and merge with user-provided config
     const defaultConfig: IFieldMappingConfig = {
@@ -127,9 +130,9 @@ class SearchAdapter implements ISearchAdapter {
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]!
       const metadata = chunk.metadata ?? {}
+      const tenantId = chunk.tenantId
 
       // Build the document with all log information
-      // Store full metadata object and also flatten commonly queried fields for better searchability
       const document: Record<string, unknown> = {
         // Core log fields
         timestamp: chunk.timestamp,
@@ -138,10 +141,92 @@ class SearchAdapter implements ISearchAdapter {
         message: chunk.message,
         embedding: embeddings[i],
 
-        // Store complete metadata object (preserves all nested structure)
-        metadata: metadata,
+        // Always store full metadata as meta_json (safe blob)
+        meta_json: metadata,
+
+        // Always generate meta_kv array for generic exact match filters
+        meta_kv: [] as string[],
       }
 
+      // Generate meta_kv array: ["key=value", "key2=value2", ...]
+      const metaKv: string[] = []
+      for (const [key, value] of Object.entries(metadata)) {
+        if (
+          value !== null &&
+          value !== undefined &&
+          typeof value !== 'object' &&
+          !Array.isArray(value)
+        ) {
+          metaKv.push(`${key}=${String(value)}`)
+        }
+      }
+      document.meta_kv = metaKv
+
+      // Get registry for tenant if metadataRegistryLookup is available and tenantId is provided
+      let registry: Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry> | undefined
+      if (this.metadataRegistryLookup && tenantId) {
+        // Check cache first
+        if (!this.registryCache.has(tenantId)) {
+          registry = await this.metadataRegistryLookup.getRegistryForTenant(tenantId)
+          this.registryCache.set(tenantId, registry)
+        } else {
+          registry = this.registryCache.get(tenantId)
+        }
+      }
+
+      // For registered keys, write to typed namespaces
+      if (registry) {
+        for (const [key, value] of Object.entries(metadata)) {
+          const registryEntry = registry.get(key)
+          if (registryEntry) {
+            // Validate type and constraints if provided
+            // For now, we'll do basic type checking
+            let typedValue: unknown = value
+
+            // Type conversion and validation
+            try {
+              switch (registryEntry.type) {
+                case 'number':
+                  typedValue = typeof value === 'number' ? value : Number(value)
+                  if (isNaN(typedValue as number)) {
+                    continue // Skip invalid numbers
+                  }
+                  break
+                case 'date':
+                  if (typeof value === 'string') {
+                    const date = new Date(value)
+                    if (isNaN(date.getTime())) {
+                      continue // Skip invalid dates
+                    }
+                    typedValue = value // Keep as ISO string
+                  } else if (value instanceof Date) {
+                    typedValue = value.toISOString()
+                  } else {
+                    continue // Skip non-date values
+                  }
+                  break
+                case 'boolean':
+                  typedValue = Boolean(value)
+                  break
+                case 'keyword':
+                case 'text':
+                  typedValue = String(value)
+                  break
+              }
+
+              // Write to appropriate typed namespace
+              const typedKey = `${registryEntry.promoteTo}.${key}`
+              document[typedKey] = typedValue
+            } catch (error) {
+              // Skip invalid values, continue with other keys
+              continue
+            }
+          }
+          // Unregistered keys do NOT create typed fields (prevents mapping explosion)
+        }
+      }
+
+      // Keep existing flattening for backward compatibility (can be removed later if not needed)
       // Automatically flatten all top-level metadata fields (except objects/arrays) into document
       for (const [key, value] of Object.entries(metadata)) {
         if (
@@ -150,7 +235,21 @@ class SearchAdapter implements ISearchAdapter {
           typeof value !== 'object' &&
           !Array.isArray(value)
         ) {
-          document[key] = value
+          // Only flatten if not already in typed namespace
+          const typedKey = `meta_num.${key}`
+          const typedKey2 = `meta_date.${key}`
+          const typedKey3 = `meta_bool.${key}`
+          const typedKey4 = `meta_kw.${key}`
+          const typedKey5 = `meta_text.${key}`
+          if (
+            !(typedKey in document) &&
+            !(typedKey2 in document) &&
+            !(typedKey3 in document) &&
+            !(typedKey4 in document) &&
+            !(typedKey5 in document)
+          ) {
+            document[key] = value
+          }
         }
       }
 

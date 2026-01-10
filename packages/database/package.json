@@ -4,12 +4,12 @@
   "private": true,
   "exports": {
     "./schema": {
-      "types": "./dist/schemas/index.d.ts",
-      "import": "./dist/schemas/index.mjs",
-      "require": "./dist/schemas/index.js"
+      "types": "./dist/schema/index.d.mts",
+      "import": "./dist/schema/index.mjs",
+      "require": "./dist/schema/index.js"
     },
     "./connection": {
-      "types": "./dist/connection.d.ts",
+      "types": "./dist/connection.d.mts",
       "import": "./dist/connection.mjs",
       "require": "./dist/connection.js"
     }

@@ -7,6 +7,11 @@
       "types": "./dist/services/index.d.ts",
       "import": "./dist/services/index.mjs",
       "require": "./dist/services/index.js"
+    },
+    "./domain": {
+      "types": "./dist/domain/index.d.ts",
+      "import": "./dist/domain/index.mjs",
+      "require": "./dist/domain/index.js"
     }
   },
   "scripts": {
@@ -21,7 +26,10 @@
   "dependencies": {
     "@opensearch-project/opensearch": "catalog:",
     "@ai-sdk/google": "catalog:",
+    "@betalogs/shared": "workspace:*",
+    "@betalogs/database": "workspace:*",
     "ai": "catalog:",
+    "drizzle-orm": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

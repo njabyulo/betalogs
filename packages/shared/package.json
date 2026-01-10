@@ -4,16 +4,16 @@
   "private": true,
   "exports": {
     "./utils": {
-      "import": "./dist/utils/index.js",
-      "types": "./dist/utils/index.d.ts"
+      "import": "./dist/utils/index.mjs",
+      "types": "./dist/utils/index.d.mts"
     },
     "./constants": {
-      "import": "./dist/constants/index.js",
-      "types": "./dist/constants/index.d.ts"
+      "import": "./dist/constants/index.mjs",
+      "types": "./dist/constants/index.d.mts"
     },
     "./types": {
-      "import": "./dist/types/index.js",
-      "types": "./dist/types/index.d.ts"
+      "import": "./dist/types/index.mjs",
+      "types": "./dist/types/index.d.mts"
     }
   },
   "scripts": {
