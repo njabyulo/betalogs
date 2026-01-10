@@ -114,6 +114,9 @@ importers:
       '@betalogs/core':
         specifier: 'workspace:'
         version: link:../../packages/core
+      '@betalogs/shared':
+        specifier: 'workspace:'
+        version: link:../../packages/shared
       dotenv:
         specifier: 'catalog:'
         version: 17.2.3
