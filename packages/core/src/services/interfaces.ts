@@ -4,11 +4,11 @@ import type {
   ISearchAdapterKnnSearchResult,
 } from '../adapters/interfaces'
 import type {
+  IChatRepository,
   ICreateChatRepositoryOptions,
   ICreateIndexingRepositoryOptions,
 } from '../repositories/interfaces'
 
-import type { ChatRepository } from '../repositories/chat'
 import type { IndexingRepository } from '../repositories/indexing'
 
 export type {
@@ -39,7 +39,7 @@ export interface IChatService {
   chat(prompt: string): Promise<string>
 }
 export interface IChatServiceOptions {
-  chatRepository: ChatRepository
+  chatRepository: IChatRepository
 }
 export interface ICreateChatServiceOptions
   extends ICreateChatRepositoryOptions { }

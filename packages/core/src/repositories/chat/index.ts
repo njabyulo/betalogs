@@ -1,3 +1,4 @@
+import { ToolSet } from 'ai'
 import { createAgentAdapter } from '../../adapters/ai-sdk'
 import type {
   AgentAdapter,
@@ -12,10 +13,10 @@ import {
   createRewriteQueryTool,
 } from './tools/opensearch'
 
-export class ChatRepository implements IChatRepository {
-  private chatAgent: AgentAdapter<TChatToolOptions, TChatToolSet>
+export class ChatRepository<D, T extends ToolSet> implements IChatRepository {
+  private chatAgent: AgentAdapter<D, T>
 
-  constructor(options: IChatRepositoryOptions) {
+  constructor(options: IChatRepositoryOptions<D, T>) {
     this.chatAgent = options.chatAgent
   }
 
@@ -29,7 +30,10 @@ export class ChatRepository implements IChatRepository {
 
 export const createChatRepository = (options: ICreateChatRepositoryOptions) => {
   const knowledgeBaseSearchTool = createKnowledgeBaseSearchTool({
-    embedding: options.embedding,
+    embedding: {
+      ...options.embedding,
+      dimension: 3072 as const,
+    },
     opensearch: options.opensearch,
   })
 
