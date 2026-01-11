@@ -1,19 +1,9 @@
-/**
- * Composition Root for Web App
- * 
- * Wires all dependencies and provides configured services.
- * API routes should use services from here.
- */
-
 import { createChatService } from '@betalogs/core/services'
-import { StoryOutputSchema } from './schemas'
+import { SStoryOutput } from './schemas'
 import { getSystemPrompt } from './prompts'
 
-/**
- * Get configured chat service
- */
 export function getChatService() {
-    return createChatService<typeof StoryOutputSchema>({
+    return createChatService<typeof SStoryOutput>({
         text: {
             provider: 'google',
             model: {
@@ -36,6 +26,6 @@ export function getChatService() {
         systemPrompt: getSystemPrompt(),
         tools: new Set(['knowledge-base-search', 'rewrite-query', 'story-search']),
         activeModelType: 'medium',
-        schema: StoryOutputSchema,
+        schema: SStoryOutput,
     })
 }
