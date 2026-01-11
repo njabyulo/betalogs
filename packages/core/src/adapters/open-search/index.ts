@@ -490,91 +490,91 @@ class SearchAdapter implements ISearchAdapter {
         // Always store full metadata as meta_json
         meta_json: metadata,
 
-      // Always generate meta_kv array for generic exact match filters
-      meta_kv: [] as string[],
-    }
-
-    // Get registry for tenant if metadataRegistryLookup is available
-    const registry = tenantId
-      ? await this.getRegistryForTenant(tenantId)
-      : undefined
-
-    // Single-pass iteration: build meta_kv array and process registered keys
-    const metaKv: string[] = []
-    for (const [key, value] of Object.entries(metadata)) {
-      // Build meta_kv array for simple values
-      if (
-        value !== null &&
-        value !== undefined &&
-        typeof value !== 'object' &&
-        !Array.isArray(value)
-      ) {
-        metaKv.push(`${key}=${String(value)}`)
+        // Always generate meta_kv array for generic exact match filters
+        meta_kv: [] as string[],
       }
 
-      // Process registered keys for typed namespaces
-      if (registry) {
-        const registryEntry = registry.get(key)
-        if (registryEntry) {
-          let typedValue: unknown = value
+      // Get registry for tenant if metadataRegistryLookup is available
+      const registry = tenantId
+        ? await this.getRegistryForTenant(tenantId)
+        : undefined
 
-          // Type conversion and validation
-          try {
-            switch (registryEntry.type) {
-              case 'number':
-                typedValue = typeof value === 'number' ? value : Number(value)
-                if (isNaN(typedValue as number)) {
-                  continue // Skip invalid numbers
-                }
-                break
-              case 'date':
-                if (typeof value === 'string') {
-                  const date = new Date(value)
-                  if (isNaN(date.getTime())) {
-                    continue // Skip invalid dates
+      // Single-pass iteration: build meta_kv array and process registered keys
+      const metaKv: string[] = []
+      for (const [key, value] of Object.entries(metadata)) {
+        // Build meta_kv array for simple values
+        if (
+          value !== null &&
+          value !== undefined &&
+          typeof value !== 'object' &&
+          !Array.isArray(value)
+        ) {
+          metaKv.push(`${key}=${String(value)}`)
+        }
+
+        // Process registered keys for typed namespaces
+        if (registry) {
+          const registryEntry = registry.get(key)
+          if (registryEntry) {
+            let typedValue: unknown = value
+
+            // Type conversion and validation
+            try {
+              switch (registryEntry.type) {
+                case 'number':
+                  typedValue = typeof value === 'number' ? value : Number(value)
+                  if (isNaN(typedValue as number)) {
+                    continue // Skip invalid numbers
                   }
-                  typedValue = value // Keep as ISO string
-                } else if (value instanceof Date) {
-                  typedValue = value.toISOString()
-                } else {
-                  continue // Skip non-date values
-                }
-                break
-              case 'boolean':
-                if (typeof value === 'boolean') {
-                  typedValue = value
-                } else if (typeof value === 'string') {
-                  const normalized = value.toLowerCase().trim()
-                  if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
-                    typedValue = true
-                  } else if (normalized === 'false' || normalized === '0' || normalized === 'no') {
-                    typedValue = false
+                  break
+                case 'date':
+                  if (typeof value === 'string') {
+                    const date = new Date(value)
+                    if (isNaN(date.getTime())) {
+                      continue // Skip invalid dates
+                    }
+                    typedValue = value // Keep as ISO string
+                  } else if (value instanceof Date) {
+                    typedValue = value.toISOString()
+                  } else {
+                    continue // Skip non-date values
+                  }
+                  break
+                case 'boolean':
+                  if (typeof value === 'boolean') {
+                    typedValue = value
+                  } else if (typeof value === 'string') {
+                    const normalized = value.toLowerCase().trim()
+                    if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+                      typedValue = true
+                    } else if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+                      typedValue = false
+                    } else {
+                      continue
+                    }
+                  } else if (typeof value === 'number') {
+                    typedValue = value !== 0
                   } else {
                     continue
                   }
-                } else if (typeof value === 'number') {
-                  typedValue = value !== 0
-                } else {
-                  continue
-                }
-                break
-              case 'keyword':
-              case 'text':
-                typedValue = String(value)
-                break
-            }
+                  break
+                case 'keyword':
+                case 'text':
+                  typedValue = String(value)
+                  break
+              }
 
-            // Write to appropriate typed namespace
-            const typedKey = `${registryEntry.promoteTo}.${key}`
-            document[typedKey] = typedValue
-          } catch (error) {
-            // Skip invalid values, continue with other keys
-            continue
+              // Write to appropriate typed namespace
+              const typedKey = `${registryEntry.promoteTo}.${key}`
+              document[typedKey] = typedValue
+            } catch (error) {
+              // Skip invalid values, continue with other keys
+              continue
+            }
           }
         }
       }
-    }
-    document.meta_kv = metaKv
+      document.meta_kv = metaKv
 
       body.push({ index: { _index: indexName, _id: doc.eventId } })
       body.push(document)
@@ -737,14 +737,12 @@ class SearchAdapter implements ISearchAdapter {
    * Generate field paths for a given identifier type based on configuration
    */
   private generateFieldPaths(identifierType: string): string[] {
-    const paths: string[] = []
-
     // 1. Check explicit mappings first (highest priority)
     if (this.fieldMappingConfig.explicit?.[identifierType]) {
       return this.fieldMappingConfig.explicit[identifierType]
     }
 
-    // 2. Generate paths based on enabled conventions
+    // 2. Generate field name variations once (pre-compute)
     const conventions = this.fieldMappingConfig.conventions ?? {}
     const fieldNames: string[] = []
 
@@ -761,24 +759,24 @@ class SearchAdapter implements ISearchAdapter {
       fieldNames.push(this.toPascalCase(identifierType))
     }
 
-    // 3. Add root-level paths
-    paths.push(...fieldNames)
+    // 3. Use Set for O(1) deduplication throughout
+    const pathsSet = new Set<string>(fieldNames)
 
-    // 4. Add metadata-prefixed paths
+    // 4. Add metadata-prefixed paths using flatMap to avoid nested loops
     const metadataPaths = conventions.metadataPaths ?? []
-    for (const metadataPath of metadataPaths) {
-      for (const fieldName of fieldNames) {
-        paths.push(`${metadataPath}.${fieldName}`)
-      }
-    }
+    metadataPaths.forEach((metadataPath) => {
+      fieldNames.forEach((fieldName) => {
+        pathsSet.add(`${metadataPath}.${fieldName}`)
+      })
+    })
 
     // 5. Add nested object paths (for ActivityEvents: object.*, correlation.*, actor.*)
     const objectPaths = conventions.objectPaths ?? []
-    for (const objectPath of objectPaths) {
-      for (const fieldName of fieldNames) {
-        paths.push(`${objectPath}.${fieldName}`)
-      }
-    }
+    objectPaths.forEach((objectPath) => {
+      fieldNames.forEach((fieldName) => {
+        pathsSet.add(`${objectPath}.${fieldName}`)
+      })
+    })
 
     // 6. Handle special identifier type mappings
     // Map common identifier types to their ActivityEvent nested object locations
@@ -787,19 +785,22 @@ class SearchAdapter implements ISearchAdapter {
     }
     const mappedFieldName = identifierTypeToObjectField[identifierType]
     if (mappedFieldName) {
-      for (const objectPath of objectPaths) {
-        const mappedFieldNames = [
-          ...(conventions.camelCase ? [this.toCamelCase(mappedFieldName)] : []),
-          ...(conventions.snakeCase ? [this.toSnakeCase(mappedFieldName)] : []),
-        ]
-        for (const mappedName of mappedFieldNames) {
-          paths.push(`${objectPath}.${mappedName}`)
-        }
+      const mappedFieldNames: string[] = []
+      if (conventions.camelCase) {
+        mappedFieldNames.push(this.toCamelCase(mappedFieldName))
       }
+      if (conventions.snakeCase) {
+        mappedFieldNames.push(this.toSnakeCase(mappedFieldName))
+      }
+      objectPaths.forEach((objectPath) => {
+        mappedFieldNames.forEach((mappedName) => {
+          pathsSet.add(`${objectPath}.${mappedName}`)
+        })
+      })
     }
 
-    // 7. Deduplicate and return
-    return [...new Set(paths)]
+    // 7. Convert Set to array (already deduplicated)
+    return Array.from(pathsSet)
   }
 
   async exactSearch(
