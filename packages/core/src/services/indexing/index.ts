@@ -42,8 +42,6 @@ class IndexingService implements IIndexingService {
   ): Promise<void> {
     if (events.length === 0) return
 
-    // Default embedding source: concatenate title + summary + message
-    // Fallback to required fields (action + source) if all optional fields are missing
     const getEmbeddingSource =
       options?.embeddingSource ??
       ((event: TActivityEvent) => {
@@ -52,7 +50,6 @@ class IndexingService implements IIndexingService {
         if (event.summary) parts.push(event.summary)
         if (event.message) parts.push(event.message)
 
-        // If no optional text fields, fallback to required fields to ensure meaningful embeddings
         if (parts.length === 0) {
           parts.push(event.action)
           parts.push(event.source)
@@ -61,23 +58,20 @@ class IndexingService implements IIndexingService {
         return parts.join(' ')
       })
 
-    // Generate embeddings for all events
     const embeddingTexts = events.map(getEmbeddingSource)
     const embeddings = await this.embeddingAdapter.embedMany({
       chunks: embeddingTexts,
       type: this.modelType,
     })
 
-    // Transform events to documents and group by date for daily indices
     const documentsByDate = new Map<string, IActivityEventDocument[]>()
 
     for (let i = 0; i < events.length; i++) {
       const event = events[i]!
       const embedding = embeddings[i]!
 
-      // Extract date from occurredAt (ISO 8601 format: YYYY-MM-DDTHH:mm:ss...)
       const occurredDate = new Date(event.occurredAt)
-      const dateStr = occurredDate.toISOString().split('T')[0]! // YYYY-MM-DD
+      const dateStr = occurredDate.toISOString().split('T')[0]!
       const indexName = `bl-activity-${dateStr}`
 
       const document: IActivityEventDocument = {
@@ -105,7 +99,6 @@ class IndexingService implements IIndexingService {
       documentsByDate.get(indexName)!.push(document)
     }
 
-    // Index documents grouped by date (each date gets its own index)
     const indexPromises = Array.from(documentsByDate.entries()).map(
       ([indexName, documents]) =>
         this.indexingRepository.indexActivityEvents(documents, indexName)
@@ -129,12 +122,6 @@ export const createIndexingService = (
     opensearch: options.opensearch,
   })
 
-  // Create embedding adapter for service to use
-  // Use the dimension from options to ensure consistency with caller's configuration
-  // The default model type is 'high', so the provided dimension should be respected
-  // We use the provided dimension for all model types to respect the caller's intent
-  // Note: The interface expects specific dimensions per model type, but we prioritize
-  // the caller's configuration to avoid dimension mismatch errors
   const embeddingAdapter = createEmbeddingAdapter({
     options: {
       provider: options.embedding.provider,
@@ -155,7 +142,6 @@ export const createIndexingService = (
     },
   })
 
-  // Use 'high' as default model type (matches SearchAdapter default)
   const modelType: import('../../adapters/interfaces').TSearchModelType = 'high'
 
   return new IndexingService({

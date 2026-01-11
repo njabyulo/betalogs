@@ -35,10 +35,9 @@ class SearchAdapter implements ISearchAdapter {
   private modelType: TSearchModelType
   private fieldMappingConfig: IFieldMappingConfig
   private metadataRegistryLookup?: ISearchAdapterOptions['metadataRegistryLookup']
-  // Cache with TTL and size limits
   private registryCache: Map<string, ICacheEntry> = new Map()
-  private readonly cacheTtlMs: number = 5 * 60 * 1000 // 5 minutes default TTL
-  private readonly cacheMaxSize: number = 100 // Maximum number of tenant entries
+  private readonly cacheTtlMs: number = 5 * 60 * 1000
+  private readonly cacheMaxSize: number = 100
 
   constructor(options: ISearchAdapterOptions) {
     this.embeddingAdapter = options.embeddingAdapter
@@ -60,7 +59,6 @@ class SearchAdapter implements ISearchAdapter {
     this.modelType = options.modelType
     this.metadataRegistryLookup = options.metadataRegistryLookup
 
-    // Set default field mapping configuration and merge with user-provided config
     const defaultConfig: IFieldMappingConfig = {
       explicit: {},
       conventions: {
@@ -69,7 +67,7 @@ class SearchAdapter implements ISearchAdapter {
         kebabCase: true,
         pascalCase: true,
         metadataPaths: ['metadata'],
-        objectPaths: ['object', 'correlation', 'actor'], // ActivityEvent nested object paths
+        objectPaths: ['object', 'correlation', 'actor'],
       },
     }
 
@@ -107,7 +105,6 @@ class SearchAdapter implements ISearchAdapter {
   private evictCacheEntries(): void {
     const now = Date.now()
 
-    // Single-pass: remove expired entries and collect remaining entries for LRU
     const remainingEntries: Array<[string, ICacheEntry]> = []
     for (const [tenantId, entry] of this.registryCache.entries()) {
       if (now - entry.timestamp > this.cacheTtlMs) {
@@ -117,9 +114,7 @@ class SearchAdapter implements ISearchAdapter {
       }
     }
 
-    // If still over size limit, remove oldest entries (LRU)
     if (this.registryCache.size > this.cacheMaxSize) {
-      // Sort only the remaining entries by timestamp (ascending = oldest first)
       remainingEntries.sort((a, b) => a[1].timestamp - b[1].timestamp)
       const toRemove = this.registryCache.size - this.cacheMaxSize
       for (let i = 0; i < toRemove; i++) {
@@ -138,27 +133,22 @@ class SearchAdapter implements ISearchAdapter {
       return undefined
     }
 
-    // Evict expired/old entries before lookup
     this.evictCacheEntries()
 
     const cached = this.registryCache.get(tenantId)
     const now = Date.now()
 
-    // Return cached entry if it exists and is not expired
     if (cached && now - cached.timestamp <= this.cacheTtlMs) {
       return cached.registry
     }
 
-    // Fetch fresh registry
     const registry = await this.metadataRegistryLookup.getRegistryForTenant(tenantId)
 
-    // Store in cache with current timestamp
     this.registryCache.set(tenantId, {
       registry,
       timestamp: now,
     })
 
-    // Evict again after adding to ensure we don't exceed size limit
     this.evictCacheEntries()
 
     return registry
@@ -169,7 +159,7 @@ class SearchAdapter implements ISearchAdapter {
       const exists = await this.client.indices.exists({ index: this.index })
       if (exists.body === true) return
     } catch (error) {
-      // If exists check fails, try to create anyway
+      // Continue to create if check fails
     }
 
     try {
@@ -231,26 +221,20 @@ class SearchAdapter implements ISearchAdapter {
             )
           }
         }
-        // Template exists and dimension matches (or no dimension set), no need to recreate
         return
       }
     } catch (error: any) {
-      // If template doesn't exist, we'll create it
-      // If it's a dimension mismatch error, rethrow it
       if (error instanceof ActivityIndexDimensionMismatchError) {
         throw error
       }
-      // If it's a "not found" error, continue to create template
       if (
         error?.meta?.body?.error?.type !== 'resource_not_found_exception' &&
         error?.statusCode !== 404
       ) {
-        // If it's some other error, rethrow
         throw error
       }
     }
 
-    // Create or update the index template
     try {
       await this.client.indices.putIndexTemplate({
         name: templateName,
@@ -264,7 +248,6 @@ class SearchAdapter implements ISearchAdapter {
             },
             mappings: {
               properties: {
-                // Core ActivityEvent fields
                 eventId: {
                   type: 'keyword',
                 },
@@ -289,7 +272,6 @@ class SearchAdapter implements ISearchAdapter {
                 schemaVersion: {
                   type: 'keyword',
                 },
-                // Text fields with keyword subfields for exact matching
                 title: {
                   type: 'text',
                   fields: {
@@ -317,7 +299,6 @@ class SearchAdapter implements ISearchAdapter {
                     },
                   },
                 },
-                // Nested objects - actor
                 actor: {
                   type: 'object',
                   properties: {
@@ -335,7 +316,6 @@ class SearchAdapter implements ISearchAdapter {
                     },
                   },
                 },
-                // Nested objects - object
                 object: {
                   type: 'object',
                   properties: {
@@ -356,7 +336,6 @@ class SearchAdapter implements ISearchAdapter {
                     },
                   },
                 },
-                // Nested objects - correlation
                 correlation: {
                   type: 'object',
                   properties: {
@@ -374,7 +353,6 @@ class SearchAdapter implements ISearchAdapter {
                     },
                   },
                 },
-                // Metadata fields
                 meta_json: {
                   type: 'object',
                   enabled: true,
@@ -382,7 +360,6 @@ class SearchAdapter implements ISearchAdapter {
                 meta_kv: {
                   type: 'keyword',
                 },
-                // Typed namespaces (dynamic fields)
                 meta_num: {
                   type: 'object',
                   dynamic: 'true' as any,
@@ -390,9 +367,7 @@ class SearchAdapter implements ISearchAdapter {
                 meta_date: {
                   type: 'object',
                   dynamic: 'true' as any,
-                  properties: {
-                    // Dynamic date fields will be added here
-                  },
+                  properties: {},
                 },
                 meta_bool: {
                   type: 'object',
@@ -406,7 +381,6 @@ class SearchAdapter implements ISearchAdapter {
                   type: 'object',
                   dynamic: 'true' as any,
                 },
-                // Vector field
                 embedding: {
                   type: 'knn_vector',
                   dimension: expectedDimension,
@@ -417,12 +391,9 @@ class SearchAdapter implements ISearchAdapter {
         },
       })
     } catch (error: any) {
-      // If template creation fails, check if it's a dimension mismatch
-      // (could happen if template was created between check and creation)
       if (error?.meta?.body?.error?.type === 'illegal_argument_exception') {
         const errorMessage = error?.meta?.body?.error?.reason || ''
         if (errorMessage.includes('dimension')) {
-          // Try to get the actual dimension from the error or existing template
           try {
             const templateResponse = await this.client.indices.getIndexTemplate({
               name: templateName,
@@ -441,7 +412,7 @@ class SearchAdapter implements ISearchAdapter {
               }
             }
           } catch (checkError) {
-            // If we can't check, throw original error
+            // Fall through to throw original error
           }
         }
       }
@@ -464,9 +435,7 @@ class SearchAdapter implements ISearchAdapter {
       const metadata = doc.metadata ?? {}
       const tenantId = doc.tenantId
 
-      // Build the document with all ActivityEvent information
       const document: Record<string, unknown> = {
-        // Core ActivityEvent fields
         eventId: doc.eventId,
         tenantId: doc.tenantId,
         occurredAt: doc.occurredAt,
@@ -477,32 +446,23 @@ class SearchAdapter implements ISearchAdapter {
         schemaVersion: doc.schemaVersion,
         embedding: doc.embedding,
 
-        // Optional text fields
         ...(doc.title !== undefined && { title: doc.title }),
         ...(doc.summary !== undefined && { summary: doc.summary }),
         ...(doc.message !== undefined && { message: doc.message }),
-
-        // Nested objects
         ...(doc.actor && { actor: doc.actor }),
         ...(doc.object && { object: doc.object }),
         ...(doc.correlation && { correlation: doc.correlation }),
 
-        // Always store full metadata as meta_json
         meta_json: metadata,
-
-        // Always generate meta_kv array for generic exact match filters
         meta_kv: [] as string[],
       }
 
-      // Get registry for tenant if metadataRegistryLookup is available
       const registry = tenantId
         ? await this.getRegistryForTenant(tenantId)
         : undefined
 
-      // Single-pass iteration: build meta_kv array and process registered keys
       const metaKv: string[] = []
       for (const [key, value] of Object.entries(metadata)) {
-        // Build meta_kv array for simple values
         if (
           value !== null &&
           value !== undefined &&
@@ -512,32 +472,30 @@ class SearchAdapter implements ISearchAdapter {
           metaKv.push(`${key}=${String(value)}`)
         }
 
-        // Process registered keys for typed namespaces
         if (registry) {
           const registryEntry = registry.get(key)
           if (registryEntry) {
             let typedValue: unknown = value
 
-            // Type conversion and validation
             try {
               switch (registryEntry.type) {
                 case 'number':
                   typedValue = typeof value === 'number' ? value : Number(value)
                   if (isNaN(typedValue as number)) {
-                    continue // Skip invalid numbers
+                    continue
                   }
                   break
                 case 'date':
                   if (typeof value === 'string') {
                     const date = new Date(value)
                     if (isNaN(date.getTime())) {
-                      continue // Skip invalid dates
+                      continue
                     }
-                    typedValue = value // Keep as ISO string
+                    typedValue = value
                   } else if (value instanceof Date) {
                     typedValue = value.toISOString()
                   } else {
-                    continue // Skip non-date values
+                    continue
                   }
                   break
                 case 'boolean':
@@ -564,11 +522,9 @@ class SearchAdapter implements ISearchAdapter {
                   break
               }
 
-              // Write to appropriate typed namespace
               const typedKey = `${registryEntry.promoteTo}.${key}`
               document[typedKey] = typedValue
             } catch (error) {
-              // Skip invalid values, continue with other keys
               continue
             }
           }
@@ -604,16 +560,10 @@ class SearchAdapter implements ISearchAdapter {
 
     const k = args.k ?? 8
 
-    // Build filter clauses from the filter parameter
-    // Support filtering by flattened fields (user_id, deployment_id, etc.) and nested metadata
     const filterClauses: QueryContainer[] = []
     if (args.filter) {
       for (const [key, value] of Object.entries(args.filter)) {
         if (value !== null && value !== undefined) {
-          // Support exact matches for flattened fields and nested metadata
-          // Try flattened field first (e.g., user_id, deployment_id)
-          // Then try nested metadata path (e.g., metadata.user_id)
-
           const termQuery: TermQuery = {
             value: value as FieldValue,
             case_insensitive: true,
@@ -631,7 +581,6 @@ class SearchAdapter implements ISearchAdapter {
               should: [
                 { term: { [key]: termQuery } },
                 { term: { [`metadata.${key}`]: termQuery } },
-                // Also support match for text fields
                 { match: { [key]: matchQuery } },
                 { match: { [`metadata.${key}`]: matchQuery } },
               ],
@@ -642,7 +591,6 @@ class SearchAdapter implements ISearchAdapter {
       }
     }
 
-    // Build the query: combine KNN search with filters
     const query: QueryContainer = {
       bool: {
         must: [
@@ -658,14 +606,12 @@ class SearchAdapter implements ISearchAdapter {
       },
     }
 
-    // Add filter clauses if any (filters are applied after KNN retrieval)
     if (filterClauses.length > 0) {
       query.bool!.filter = filterClauses
     }
 
     const body: Search_RequestBody = {
       size: k,
-      // Return all fields including flattened ones and full metadata
       _source: true,
       query,
     }
@@ -679,7 +625,6 @@ class SearchAdapter implements ISearchAdapter {
       id: h._id as string,
       score: h._score as number,
       text: h._source?.message as string,
-      // Return the full source document so all information is available
       metadata: h._source as Record<string, unknown>,
     }))
 
@@ -703,7 +648,6 @@ class SearchAdapter implements ISearchAdapter {
    * e.g., "orderId" -> "orderId", "order_id" -> "orderId", "order-id" -> "orderId"
    */
   private toCamelCase(str: string): string {
-    // If already camelCase (starts with lowercase), return as-is
     if (/^[a-z]/.test(str) && !/[-_]/.test(str)) {
       return str
     }
@@ -737,12 +681,10 @@ class SearchAdapter implements ISearchAdapter {
    * Generate field paths for a given identifier type based on configuration
    */
   private generateFieldPaths(identifierType: string): string[] {
-    // 1. Check explicit mappings first (highest priority)
     if (this.fieldMappingConfig.explicit?.[identifierType]) {
       return this.fieldMappingConfig.explicit[identifierType]
     }
 
-    // 2. Generate field name variations once (pre-compute)
     const conventions = this.fieldMappingConfig.conventions ?? {}
     const fieldNames: string[] = []
 
@@ -759,10 +701,8 @@ class SearchAdapter implements ISearchAdapter {
       fieldNames.push(this.toPascalCase(identifierType))
     }
 
-    // 3. Use Set for O(1) deduplication throughout
     const pathsSet = new Set<string>(fieldNames)
 
-    // 4. Add metadata-prefixed paths using flatMap to avoid nested loops
     const metadataPaths = conventions.metadataPaths ?? []
     metadataPaths.forEach((metadataPath) => {
       fieldNames.forEach((fieldName) => {
@@ -770,7 +710,6 @@ class SearchAdapter implements ISearchAdapter {
       })
     })
 
-    // 5. Add nested object paths (for ActivityEvents: object.*, correlation.*, actor.*)
     const objectPaths = conventions.objectPaths ?? []
     objectPaths.forEach((objectPath) => {
       fieldNames.forEach((fieldName) => {
@@ -778,10 +717,8 @@ class SearchAdapter implements ISearchAdapter {
       })
     })
 
-    // 6. Handle special identifier type mappings
-    // Map common identifier types to their ActivityEvent nested object locations
     const identifierTypeToObjectField: Record<string, string> = {
-      shipmentId: 'resourceId', // shipmentId maps to object.resourceId
+      shipmentId: 'resourceId',
     }
     const mappedFieldName = identifierTypeToObjectField[identifierType]
     if (mappedFieldName) {
@@ -799,7 +736,6 @@ class SearchAdapter implements ISearchAdapter {
       })
     }
 
-    // 7. Convert Set to array (already deduplicated)
     return Array.from(pathsSet)
   }
 
@@ -808,11 +744,8 @@ class SearchAdapter implements ISearchAdapter {
   ): Promise<ISearchAdapterExactSearchResult[]> {
     const { identifier, identifierType } = args
 
-    // Generate field paths based on configuration
-    // This already includes nested object paths (object.*, correlation.*, actor.*) via generateFieldPaths
     const fields = this.generateFieldPaths(identifierType)
 
-    // Build a query that searches across all possible field locations
     const shouldClauses = fields.flatMap((field) => [
       {
         term: {
@@ -840,7 +773,7 @@ class SearchAdapter implements ISearchAdapter {
     }
 
     const body: Search_RequestBody = {
-      size: 1000, // Get all matching events (reasonable limit)
+      size: 1000,
       _source: true,
       query,
       sort: [
@@ -865,8 +798,6 @@ class SearchAdapter implements ISearchAdapter {
       ],
     }
 
-    // For ActivityEvents, always search across all daily indices matching bl-activity-*
-    // Also search the configured index in case there are other document types
     const searchIndices = ['bl-activity-*', this.index]
 
     const resp = await this.client.search({
@@ -877,7 +808,7 @@ class SearchAdapter implements ISearchAdapter {
     const hits = (resp.body?.hits?.hits ?? []).map((h: any) => ({
       id: h._id as string,
       timestamp: (h._source?.occurredAt || h._source?.timestamp) as string,
-      level: (h._source?.level || h._source?.outcome) as string, // ActivityEvents use 'outcome' instead of 'level'
+      level: (h._source?.level || h._source?.outcome) as string,
       service: h._source?.source || h._source?.service as string,
       message: h._source?.message as string,
       metadata: h._source as Record<string, unknown>,

@@ -31,7 +31,6 @@ export class MetadataRegistryService implements IMetadataRegistryService {
     constraintsJson?: Record<string, unknown>,
     promoteTo?: string
   ): Promise<TMetadataRegistryEntry> {
-    // Auto-determine promoteTo from type if not provided
     let finalPromoteTo: string
     if (promoteTo) {
       finalPromoteTo = promoteTo
@@ -49,7 +48,6 @@ export class MetadataRegistryService implements IMetadataRegistryService {
       }
     }
 
-    // Validate type/promoteTo consistency
     const typeToPromoteMap: Record<string, string> = {
       [MetadataType.NUMBER]: MetadataPromoteTo.META_NUM,
       [MetadataType.DATE]: MetadataPromoteTo.META_DATE,
@@ -63,7 +61,6 @@ export class MetadataRegistryService implements IMetadataRegistryService {
       )
     }
 
-    // Check if key already exists
     const existing = await this.metadataRegistryRepository.findByKey(
       tenantId,
       key
