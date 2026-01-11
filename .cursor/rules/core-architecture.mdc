@@ -1,0 +1,321 @@
+---
+alwaysApply: true
+---
+
+# Betalogs Architecture & Coding Standards (Cursor Rules)
+
+These rules apply to all changes unless explicitly approved.
+
+============================================================
+0) Goals
+============================================================
+- Predictable dependencies (no hidden coupling)
+- Testability (mock ports, not implementations)
+- Transport-agnostic core (HTTP/SQS/Lambda stay outside core)
+- Vendor isolation (SDK quirks stay in adapters)
+- Stable domain contracts (Zod + types are the source of truth)
+
+============================================================
+1) Directory Structure
+============================================================
+packages/core/src/
+  domain/        Domain models, Zod schemas, domain errors
+  services/      Orchestration + business policies (no infra)
+  repositories/  Persistence boundaries + adapter composition
+  adapters/      External systems (SDKs/APIs), normalization
+
+Outside core:
+  apps/functions/**  HTTP/Lambda handlers (transport + wiring)
+  infra/**           SST infrastructure only
+  packages/database  Drizzle schema/migrations
+
+============================================================
+2) Dependency Rules (Hard)
+============================================================
+Allowed direction (non-negotiable):
+
+  handlers (apps/*)
+    → services
+      → repository ports (types) + adapter ports (types)
+    repositories
+      → adapters (implementations)
+    adapters
+      → external SDKs/APIs
+    repositories
+      → @betalogs/database (DB/ORM)
+    domain
+      → used by all layers
+
+Forbidden imports (hard errors):
+
+Service classes MUST NOT import:
+- adapter implementations or factories
+- repository implementations or factories
+- DB/ORM clients or schema
+- HTTP/Lambda/SQS/event shapes
+
+Service factories (create*Service) MAY import:
+- repository factories (to create repositories internally)
+- adapter factories (to create adapters internally)
+- DB/ORM clients (to pass to repository factories)
+
+This allows service factories to handle composition while keeping service classes decoupled.
+
+Repositories MUST NOT import:
+- services
+- handlers
+- transport types (HTTP req/res, Lambda event)
+
+Adapters MUST NOT import:
+- services
+- repositories
+- DB schema/ORM
+
+Handlers MUST NOT import:
+- repositories or adapters directly (implementations or factories)
+- DB schema/ORM inside handlers (prefer composition root; see Section 8)
+
+Handlers SHOULD import:
+- service factories only (services handle repository/adapter creation internally)
+
+============================================================
+3) Ports (Contracts)
+============================================================
+A port is an interface/type defining a capability boundary.
+
+Types of ports:
+1) Repository ports (persistence boundaries)
+   - Defined in packages/core/src/repositories/interfaces.ts
+   - Implemented in repositories/{feature}/
+
+2) Adapter ports (external boundaries)
+   - Defined in packages/core/src/adapters/interfaces.ts
+     OR adapters/{capability}-port.ts
+   - Implemented in adapters/{provider}/
+
+Rule:
+- Services depend on ports as TYPES ONLY.
+
+============================================================
+4) Domain Layer Rules (domain/)
+============================================================
+Owns:
+- Zod schemas + TS types
+- Domain errors (no HTTP codes)
+- Domain constants/enums
+
+Must:
+- Export Zod schemas (S*)
+- Export types (T*)
+- Export domain errors (*Error)
+- Provide parse helpers when useful:
+  - parse* (throws)
+  - safeParse* (returns result)
+
+Must not:
+- Import adapters, repositories, services, or database
+- Depend on runtime environment
+
+============================================================
+5) Service Layer Rules (services/)
+============================================================
+Owns:
+- Business policies and orchestration
+- Mode routing (Story/Q&A/COE) and enforcement
+- Domain validation
+- Domain errors (not HTTP)
+
+Service classes must:
+- Accept dependencies via constructor injection (ports)
+- Depend only on:
+  - domain/**
+  - repository ports (types)
+  - adapter ports (types)
+
+Service factories (create*Service) must:
+- Accept infrastructure dependencies (db, config, etc.)
+- Create repositories/adapters internally
+- Return configured service instances
+- Export:
+  - create{Feature}Service() factory
+  - {Feature}Service class
+
+Service classes must not:
+- Import adapter/repository implementations or factories
+- Import DB clients/ORM/schema
+- Contain transport concerns (HTTP codes, headers, Lambda events, SQS delete/visibility)
+
+Service factories may:
+- Import repository/adapter factories to compose dependencies
+- Import DB clients to pass to repository factories
+
+Error rule:
+- Services throw domain errors only
+- No Response objects, no status codes, no framework types
+
+Correct example:
+- import type { IActivityRepository } from "../repositories/interfaces";
+- import type { IGitHubPort } from "../adapters/github-port";
+
+============================================================
+6) Repository Layer Rules (repositories/)
+============================================================
+Owns:
+- Persistence logic (DB queries, mapping)
+- Composition of adapter implementations
+- Vendor/ORM mapping to domain models
+
+Must:
+- Implement repository ports from repositories/interfaces.ts
+- Translate DB rows into domain types
+- Normalize infra failures into domain errors where appropriate
+- Export:
+  - create{Feature}Repository() factory
+  - {Feature}Repository class
+
+Allowed:
+- Import DB schema/ORM (@betalogs/database)
+- Import adapter implementations/factories (composition happens here)
+
+Must not:
+- Encode business rules or permission policy (belongs in services)
+- Import services or handlers
+- Leak ORM/SDK types in public method signatures
+
+============================================================
+7) Adapter Layer Rules (adapters/)
+============================================================
+Owns:
+- External SDK/APIs (OpenSearch, Google AI, GitHub, AWS SDK)
+- Provider quirks and normalization
+- Retry classification where possible (retryable vs non-retryable)
+
+Must:
+- Implement adapter ports
+- Keep vendor payload types private
+- Return normalized types
+- Export:
+  - create{Feature}Adapter() factory
+  - {Feature}Adapter class
+
+Must not:
+- Import services, repositories, or database schema/ORM
+- Implement business policy
+
+============================================================
+8) Factories & Wiring (Strict DI + Handler/Service Boundary)
+============================================================
+Core rule:
+- Core must be transport-agnostic.
+- Handlers wire dependencies and call services.
+
+Recommended:
+- One composition root per runtime:
+  apps/functions/src/compose.ts
+
+Handler → Service communication rules:
+Handlers are responsible for:
+- Extract auth context (tenantId/userId/role)
+- Parse and validate transport inputs (query/body/headers)
+- Call service methods using domain-shaped inputs
+- Map domain outputs/errors to HTTP responses
+- Boundary logging/metrics
+
+Services are responsible for:
+- Business validation and orchestration
+- Calling repos/adapters via ports
+- Returning domain outputs or throwing domain errors
+
+Required handler pattern:
+- handler parses input → calls service → maps domain error to HTTP
+
+Do not:
+- Put business rules in handlers
+- Put HTTP status logic in services
+
+DB wiring rule:
+- Prefer DB initialization in compose.ts, not in individual handlers.
+- Handlers should not import DB clients directly unless compose.ts is not available.
+
+============================================================
+9) Error Handling (Layer-specific)
+============================================================
+Adapters:
+- Normalize provider errors
+- Include provider code/status when present
+- Classify retryable vs non-retryable when possible
+- Throw adapter-scoped errors (e.g., OpenSearchError)
+
+Repositories:
+- Catch adapter/DB errors and map to domain errors where appropriate:
+  NotFoundError, ConflictError, UnavailableError
+- Never throw raw ORM/SDK errors upward
+
+Services:
+- Throw domain errors only
+- Avoid leaking provider details
+
+Handlers:
+- Map domain errors to HTTP codes
+- For async pipelines: map errors to retry/DLQ decisions
+
+============================================================
+10) Naming & File Conventions
+============================================================
+Types:
+- Interfaces/ports: I*
+- Types: T*
+- Zod schemas: S*
+- Errors: *Error
+
+Exports:
+- Each feature folder exports from index.ts
+- packages/core/src/*/index.ts are the only public entry points
+
+============================================================
+11) Common Violations (Fail the PR)
+============================================================
+1) Service class imports adapter factory/implementation (factories may)
+2) Service class imports repository factory/implementation (factories may)
+3) Service class imports DB schema/ORM (factories may)
+4) Repository imports service
+5) Adapter imports repository/service
+6) Handler imports repositories/adapters directly
+7) ORM/SDK types leak into service method signatures
+8) Services return HTTP/framework response objects
+9) Repositories contain authorization policy
+
+============================================================
+12) Testing Standards
+============================================================
+Service unit tests:
+- Mock ports (I*Repository, I*Port)
+- Test business rules and orchestration only
+
+Repository integration tests:
+- Real DB (test container) or test DB
+- Verify mapping correctness and error normalization
+
+Adapter integration tests:
+- Contract tests with recorded responses where possible
+- Ensure normalization and retry classification
+
+============================================================
+13) Practical Examples (Correct vs Incorrect)
+============================================================
+
+Correct: Service depends on ports as types
+- import type { IStoryRepository } from "../repositories/interfaces";
+- import type { ISearchPort } from "../adapters/interfaces";
+
+Incorrect: Service imports implementations
+- import { createSearchAdapter } from "../adapters/open-search";  (NO)
+- import { db } from "@betalogs/database/connection";             (NO)
+
+Correct: Repository composes adapters + DB
+- import { createSearchAdapter } from "../adapters/open-search";  (YES)
+- import { activityEvents } from "@betalogs/database/schema";     (YES)
+
+Correct: Handler calls service and maps errors
+- import { createStoryService } from "@betalogs/core/services";
+  try { ... } catch (err) { return mapDomainErrorToHttp(err); }
