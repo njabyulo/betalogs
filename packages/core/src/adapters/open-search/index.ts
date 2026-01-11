@@ -42,6 +42,8 @@ class SearchAdapter implements ISearchAdapter {
 
   constructor(options: ISearchAdapterOptions) {
     this.embeddingAdapter = options.embeddingAdapter
+    const nodeUrl = new URL(options.opensearch.node)
+    const isHttps = nodeUrl.protocol === 'https:'
     this.client = new Client({
       node: options.opensearch.node,
       auth:
@@ -51,7 +53,7 @@ class SearchAdapter implements ISearchAdapter {
             password: options.opensearch.password,
           }
           : undefined,
-      ssl: { rejectUnauthorized: false },
+      ...(isHttps && { ssl: { rejectUnauthorized: false } }),
     })
 
     this.index = options.opensearch.index
@@ -842,7 +844,20 @@ class SearchAdapter implements ISearchAdapter {
       query,
       sort: [
         {
-          occurredAt: {
+          _script: {
+            type: 'number',
+            script: {
+              lang: 'painless',
+              source: `
+                if (doc['occurredAt'].size() > 0) {
+                  return doc['occurredAt'].value.millis;
+                } else if (doc['timestamp'].size() > 0) {
+                  return doc['timestamp'].value.millis;
+                } else {
+                  return 0;
+                }
+              `,
+            },
             order: 'asc' as const,
           },
         },
@@ -861,7 +876,7 @@ class SearchAdapter implements ISearchAdapter {
     const hits = (resp.body?.hits?.hits ?? []).map((h: any) => ({
       id: h._id as string,
       timestamp: (h._source?.occurredAt || h._source?.timestamp) as string,
-      level: h._source?.level as string,
+      level: (h._source?.level || h._source?.outcome) as string, // ActivityEvents use 'outcome' instead of 'level'
       service: h._source?.source || h._source?.service as string,
       message: h._source?.message as string,
       metadata: h._source as Record<string, unknown>,
