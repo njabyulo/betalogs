@@ -128,21 +128,21 @@ export const createIndexingService = (
       model: {
         low: {
           model: options.embedding.model,
-          dimension: options.embedding.dimension as any,
+          dimension: 768,
         },
         medium: {
           model: options.embedding.model,
-          dimension: options.embedding.dimension as any,
+          dimension: 3072,
         },
         high: {
           model: options.embedding.model,
-          dimension: options.embedding.dimension as any,
+          dimension: 3072,
         },
       },
     },
   })
 
-  const modelType: TSearchModelType = 'high'
+  const modelType: TSearchModelType = options.embedding.dimension === 768 ? 'low' : 'high'
 
   return new IndexingService({
     indexingRepository,

@@ -820,22 +820,22 @@ class SearchAdapter implements ISearchAdapter {
 }
 
 export const createSearchAdapter = (options: ICreateSearchAdapterOptions) => {
-  const modelType = 'high'
+  const modelType: TSearchModelType = options.embedding.dimension === 768 ? 'low' : 'high'
 
   const embeddingAdapter = createEmbeddingAdapter({
     options: {
-      provider: 'google',
+      provider: options.embedding.provider,
       model: {
         low: {
-          model: 'gemini-embedding-001',
+          model: options.embedding.model,
           dimension: 768,
         },
         medium: {
-          model: 'gemini-embedding-001',
+          model: options.embedding.model,
           dimension: 3072,
         },
         high: {
-          model: 'gemini-embedding-001',
+          model: options.embedding.model,
           dimension: 3072,
         },
       },

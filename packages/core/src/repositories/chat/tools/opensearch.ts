@@ -81,6 +81,11 @@ export const createKnowledgeBaseSearchTool = (
 }
 
 interface ICreateStorySearchToolOptions {
+  embedding: {
+    provider: 'google'
+    model: 'gemini-embedding-001'
+    dimension: 3072 | 768
+  }
   opensearch: {
     node: string
     index: string
@@ -93,11 +98,7 @@ export const createStorySearchTool = (
   options: ICreateStorySearchToolOptions
 ) => {
   const search = createSearchAdapter({
-    embedding: {
-      provider: 'google',
-      model: 'gemini-embedding-001',
-      dimension: 3072,
-    },
+    embedding: options.embedding,
     opensearch: options.opensearch,
   })
 

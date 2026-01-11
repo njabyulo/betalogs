@@ -51,6 +51,10 @@ export const createChatRepository = <TSchema extends z.ZodTypeAny>(
   })
 
   const storySearchTool = createStorySearchTool({
+    embedding: {
+      ...options.embedding,
+      dimension: 3072 as const,
+    },
     opensearch: options.opensearch,
   })
 
