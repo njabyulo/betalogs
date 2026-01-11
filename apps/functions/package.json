@@ -16,9 +16,9 @@
     "@betalogs/shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^20.19.27",
-    "esbuild": "^0.24.2",
-    "tsx": "^4.19.2",
-    "typescript": "^5.9.3"
+    "@types/node": "catalog:",
+    "esbuild": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }
