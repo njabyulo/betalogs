@@ -1,9 +1,7 @@
-// Re-export the StoryOutputSchema from a shared location
-// For now, we'll define it here to match the sandbox implementation
 
 import { z } from 'zod'
 
-export const StoryTimelineEntrySchema = z.object({
+export const SStoryTimelineEntry = z.object({
   timestamp: z.string().describe('ISO timestamp'),
   level: z.string().describe('Log level or "unknown"'),
   category: z
@@ -29,7 +27,7 @@ export const StoryTimelineEntrySchema = z.object({
   citations: z.array(z.string()).describe('Citation references like [id: X]'),
 })
 
-export const StoryRawEventSchema = z.object({
+export const SStoryRawEvent = z.object({
   id: z.string().describe('Event ID'),
   timestamp: z.string().describe('ISO timestamp'),
   source: z.string().describe('Event source'),
@@ -37,12 +35,12 @@ export const StoryRawEventSchema = z.object({
   citations: z.array(z.string()).describe('Citation references'),
 })
 
-export const StoryTimeRangeSchema = z.object({
+export const SStoryTimeRange = z.object({
   from: z.string().nullable().describe('ISO timestamp or null'),
   to: z.string().nullable().describe('ISO timestamp or null'),
 })
 
-export const StoryOutputSchema = z.object({
+export const SStoryOutput = z.object({
   story: z.object({
     identifier: z.string().describe('The identifier used for the search'),
     identifierType: z
@@ -58,10 +56,10 @@ export const StoryOutputSchema = z.object({
         'emailHash',
       ])
       .describe('Type of identifier'),
-    timeRange: StoryTimeRangeSchema,
-    timeline: z.array(StoryTimelineEntrySchema).describe('Chronological events'),
+    timeRange: SStoryTimeRange,
+    timeline: z.array(SStoryTimelineEntry).describe('Chronological events'),
     rawEvents: z
-      .array(StoryRawEventSchema)
+      .array(SStoryRawEvent)
       .describe('Complete event data with full metadata'),
     summary: z.string().describe('2-3 sentence summary with citations'),
     impact: z.string().describe('Key outcomes with citations'),
@@ -70,4 +68,4 @@ export const StoryOutputSchema = z.object({
   }),
 })
 
-export type StoryOutput = z.infer<typeof StoryOutputSchema>
+export type TStoryOutput = z.infer<typeof SStoryOutput>
