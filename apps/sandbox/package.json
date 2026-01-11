@@ -12,6 +12,7 @@
   "dependencies": {
     "@betalogs/core": "workspace:",
     "@betalogs/shared": "workspace:",
+    "@types/node": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:",
     "zod-to-json-schema": "catalog:"
