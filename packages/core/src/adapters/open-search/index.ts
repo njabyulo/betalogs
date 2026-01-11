@@ -23,7 +23,7 @@ import type {
 } from '../interfaces'
 import { ActivityIndexDimensionMismatchError } from '../../domain/activity/ActivityIndexError'
 
-interface CacheEntry {
+interface ICacheEntry {
   registry: Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>
   timestamp: number
 }
@@ -36,7 +36,7 @@ class SearchAdapter implements ISearchAdapter {
   private fieldMappingConfig: IFieldMappingConfig
   private metadataRegistryLookup?: ISearchAdapterOptions['metadataRegistryLookup']
   // Cache with TTL and size limits
-  private registryCache: Map<string, CacheEntry> = new Map()
+  private registryCache: Map<string, ICacheEntry> = new Map()
   private readonly cacheTtlMs: number = 5 * 60 * 1000 // 5 minutes default TTL
   private readonly cacheMaxSize: number = 100 // Maximum number of tenant entries
 
