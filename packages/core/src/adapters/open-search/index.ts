@@ -106,23 +106,24 @@ class SearchAdapter implements ISearchAdapter {
    */
   private evictCacheEntries(): void {
     const now = Date.now()
-    const entries = Array.from(this.registryCache.entries())
 
-    // Remove expired entries
-    for (const [tenantId, entry] of entries) {
+    // Single-pass: remove expired entries and collect remaining entries for LRU
+    const remainingEntries: Array<[string, ICacheEntry]> = []
+    for (const [tenantId, entry] of this.registryCache.entries()) {
       if (now - entry.timestamp > this.cacheTtlMs) {
         this.registryCache.delete(tenantId)
+      } else {
+        remainingEntries.push([tenantId, entry])
       }
     }
 
     // If still over size limit, remove oldest entries (LRU)
     if (this.registryCache.size > this.cacheMaxSize) {
-      const sortedEntries = Array.from(this.registryCache.entries()).sort(
-        (a, b) => a[1].timestamp - b[1].timestamp
-      )
+      // Sort only the remaining entries by timestamp (ascending = oldest first)
+      remainingEntries.sort((a, b) => a[1].timestamp - b[1].timestamp)
       const toRemove = this.registryCache.size - this.cacheMaxSize
       for (let i = 0; i < toRemove; i++) {
-        this.registryCache.delete(sortedEntries[i]![0])
+        this.registryCache.delete(remainingEntries[i]![0])
       }
     }
   }
