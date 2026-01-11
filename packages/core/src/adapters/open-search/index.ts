@@ -490,92 +490,91 @@ class SearchAdapter implements ISearchAdapter {
         // Always store full metadata as meta_json
         meta_json: metadata,
 
-        // Always generate meta_kv array for generic exact match filters
-        meta_kv: [] as string[],
+      // Always generate meta_kv array for generic exact match filters
+      meta_kv: [] as string[],
+    }
+
+    // Get registry for tenant if metadataRegistryLookup is available
+    const registry = tenantId
+      ? await this.getRegistryForTenant(tenantId)
+      : undefined
+
+    // Single-pass iteration: build meta_kv array and process registered keys
+    const metaKv: string[] = []
+    for (const [key, value] of Object.entries(metadata)) {
+      // Build meta_kv array for simple values
+      if (
+        value !== null &&
+        value !== undefined &&
+        typeof value !== 'object' &&
+        !Array.isArray(value)
+      ) {
+        metaKv.push(`${key}=${String(value)}`)
       }
 
-      // Generate meta_kv array: ["key=value", "key2=value2", ...]
-      const metaKv: string[] = []
-      for (const [key, value] of Object.entries(metadata)) {
-        if (
-          value !== null &&
-          value !== undefined &&
-          typeof value !== 'object' &&
-          !Array.isArray(value)
-        ) {
-          metaKv.push(`${key}=${String(value)}`)
-        }
-      }
-      document.meta_kv = metaKv
-
-      // Get registry for tenant if metadataRegistryLookup is available
-      const registry = tenantId
-        ? await this.getRegistryForTenant(tenantId)
-        : undefined
-
-      // For registered keys, write to typed namespaces
+      // Process registered keys for typed namespaces
       if (registry) {
-        for (const [key, value] of Object.entries(metadata)) {
-          const registryEntry = registry.get(key)
-          if (registryEntry) {
-            let typedValue: unknown = value
+        const registryEntry = registry.get(key)
+        if (registryEntry) {
+          let typedValue: unknown = value
 
-            // Type conversion and validation
-            try {
-              switch (registryEntry.type) {
-                case 'number':
-                  typedValue = typeof value === 'number' ? value : Number(value)
-                  if (isNaN(typedValue as number)) {
-                    continue // Skip invalid numbers
+          // Type conversion and validation
+          try {
+            switch (registryEntry.type) {
+              case 'number':
+                typedValue = typeof value === 'number' ? value : Number(value)
+                if (isNaN(typedValue as number)) {
+                  continue // Skip invalid numbers
+                }
+                break
+              case 'date':
+                if (typeof value === 'string') {
+                  const date = new Date(value)
+                  if (isNaN(date.getTime())) {
+                    continue // Skip invalid dates
                   }
-                  break
-                case 'date':
-                  if (typeof value === 'string') {
-                    const date = new Date(value)
-                    if (isNaN(date.getTime())) {
-                      continue // Skip invalid dates
-                    }
-                    typedValue = value // Keep as ISO string
-                  } else if (value instanceof Date) {
-                    typedValue = value.toISOString()
-                  } else {
-                    continue // Skip non-date values
-                  }
-                  break
-                case 'boolean':
-                  if (typeof value === 'boolean') {
-                    typedValue = value
-                  } else if (typeof value === 'string') {
-                    const normalized = value.toLowerCase().trim()
-                    if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
-                      typedValue = true
-                    } else if (normalized === 'false' || normalized === '0' || normalized === 'no') {
-                      typedValue = false
-                    } else {
-                      continue
-                    }
-                  } else if (typeof value === 'number') {
-                    typedValue = value !== 0
+                  typedValue = value // Keep as ISO string
+                } else if (value instanceof Date) {
+                  typedValue = value.toISOString()
+                } else {
+                  continue // Skip non-date values
+                }
+                break
+              case 'boolean':
+                if (typeof value === 'boolean') {
+                  typedValue = value
+                } else if (typeof value === 'string') {
+                  const normalized = value.toLowerCase().trim()
+                  if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+                    typedValue = true
+                  } else if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+                    typedValue = false
                   } else {
                     continue
                   }
-                  break
-                case 'keyword':
-                case 'text':
-                  typedValue = String(value)
-                  break
-              }
-
-              // Write to appropriate typed namespace
-              const typedKey = `${registryEntry.promoteTo}.${key}`
-              document[typedKey] = typedValue
-            } catch (error) {
-              // Skip invalid values, continue with other keys
-              continue
+                } else if (typeof value === 'number') {
+                  typedValue = value !== 0
+                } else {
+                  continue
+                }
+                break
+              case 'keyword':
+              case 'text':
+                typedValue = String(value)
+                break
             }
+
+            // Write to appropriate typed namespace
+            const typedKey = `${registryEntry.promoteTo}.${key}`
+            document[typedKey] = typedValue
+          } catch (error) {
+            // Skip invalid values, continue with other keys
+            continue
           }
         }
       }
+    }
+    document.meta_kv = metaKv
 
       body.push({ index: { _index: indexName, _id: doc.eventId } })
       body.push(document)
