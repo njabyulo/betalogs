@@ -1,7 +1,7 @@
 import { createIndexingRepository } from '../../repositories/indexing'
 import { createEmbeddingAdapter } from '../../adapters/ai-sdk'
 import type { TActivityEvent } from '../../domain/activity/ActivityEvent'
-import type { IActivityEventDocument } from '../../adapters/interfaces'
+import type { IActivityEventDocument, TSearchModelType } from '../../adapters/interfaces'
 import {
   ICreateIndexingRepositoryOptions,
   IIndexingService,
@@ -142,7 +142,7 @@ export const createIndexingService = (
     },
   })
 
-  const modelType: import('../../adapters/interfaces').TSearchModelType = 'high'
+  const modelType: TSearchModelType = 'high'
 
   return new IndexingService({
     indexingRepository,

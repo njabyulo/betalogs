@@ -1,5 +1,6 @@
 import type { Embedding, ToolLoopAgentSettings, ToolSet } from 'ai'
 import type { z } from 'zod'
+import type { TMetadataRegistryEntry } from '@betalogs/shared/types'
 
 export interface ISearchEmbeddingModelArgs {
   provider: 'google'
@@ -64,7 +65,7 @@ export interface IFieldMappingConfig {
  * Adapters depend on this port, not on services directly
  */
 export interface IMetadataRegistryLookupPort {
-  getRegistryForTenant(tenantId: string): Promise<Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>>
+  getRegistryForTenant(tenantId: string): Promise<Map<string, TMetadataRegistryEntry>>
 }
 
 export interface ISearchAdapterOptions {

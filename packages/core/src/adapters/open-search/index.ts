@@ -21,10 +21,11 @@ import type {
   ISearchAdapterExactSearchArgs,
   ISearchAdapterExactSearchResult,
 } from '../interfaces'
+import type { TMetadataRegistryEntry } from '@betalogs/shared/types'
 import { ActivityIndexDimensionMismatchError } from '../../domain/activity/ActivityIndexError'
 
 interface ICacheEntry {
-  registry: Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry>
+  registry: Map<string, TMetadataRegistryEntry>
   timestamp: number
 }
 
@@ -128,7 +129,7 @@ class SearchAdapter implements ISearchAdapter {
    */
   private async getRegistryForTenant(
     tenantId: string
-  ): Promise<Map<string, import('@betalogs/shared/types').TMetadataRegistryEntry> | undefined> {
+  ): Promise<Map<string, TMetadataRegistryEntry> | undefined> {
     if (!this.metadataRegistryLookup) {
       return undefined
     }
