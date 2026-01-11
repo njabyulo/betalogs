@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { UIMessage } from 'ai'
 import { getChatService } from '~/lib/compose'
 
 export const runtime = 'nodejs'
@@ -7,11 +8,11 @@ export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
     try {
-        const { messages } = await req.json()
+        const { messages }: { messages: UIMessage[] } = await req.json()
 
-        // Extract the last user message as the prompt
         const lastMessage = messages[messages.length - 1]
-        const prompt = lastMessage?.content || ''
+        const textPart = lastMessage?.parts?.find((part): part is { type: 'text'; text: string } => part.type === 'text')
+        const prompt = textPart?.text || ''
 
         if (!prompt || typeof prompt !== 'string') {
             return new Response(
@@ -21,36 +22,12 @@ export async function POST(req: NextRequest) {
         }
 
         const chatService = getChatService()
-
-        // Call chat service and get the result
         const result = await chatService.chat(prompt)
-
-        // Convert the result to JSON string
         const resultText = JSON.stringify(result)
 
-        // Create a ReadableStream to stream the JSON response
-        // This follows Next.js patterns for streaming responses
-        const stream = new ReadableStream({
-            async start(controller) {
-                const encoder = new TextEncoder()
-
-                // Stream the JSON in chunks for better UX
-                const chunkSize = 1000 // bytes per chunk
-                for (let i = 0; i < resultText.length; i += chunkSize) {
-                    const chunk = resultText.slice(i, i + chunkSize)
-                    controller.enqueue(encoder.encode(chunk))
-
-                    // Small delay to allow streaming effect
-                    await new Promise((resolve) => setTimeout(resolve, 10))
-                }
-
-                controller.close()
-            },
-        })
-
-        return new Response(stream, {
+        return new Response(resultText, {
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain',
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive',
             },
