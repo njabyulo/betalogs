@@ -101,6 +101,9 @@ export const createStorySearchTool = (
     opensearch: options.opensearch,
   })
 
+  // Maximum number of events to include in the model output to prevent token limit errors
+  const MAX_EVENTS_IN_OUTPUT = 30
+
   return tool({
     description:
       'Exact search for all events related to a specific identifier. Common types include: orderId, shipmentId, ticketId, traceId, requestId, email, checkoutId, userId, emailHash. Use this when the user provides a specific identifier to retrieve the complete timeline of events. Returns all matching events sorted chronologically.',
@@ -119,7 +122,31 @@ export const createStorySearchTool = (
         identifier,
         identifierType,
       })
-      return results
+      return results.map((result) => ({
+        id: result.id,
+        timestamp: result.timestamp,
+        level: result.level,
+        service: result.service,
+        message: result.message,
+        metadata: undefined,
+      }))
+    },
+    toModelOutput: async ({ output }) => {
+      // Limit the number of events sent to the model to prevent token limit errors
+      const events = Array.isArray(output) ? output : []
+      const totalEvents = events.length
+      const limitedEvents = events.slice(0, MAX_EVENTS_IN_OUTPUT)
+
+      // If we truncated events, include a note about the total count
+      const summary = totalEvents > MAX_EVENTS_IN_OUTPUT
+        ? `Found ${totalEvents} total events. Showing first ${MAX_EVENTS_IN_OUTPUT} events chronologically. Use these representative events to construct the story timeline.`
+        : `Found ${totalEvents} events.`
+
+      // Use compact JSON (no indentation) to reduce token usage
+      return {
+        type: 'text' as const,
+        value: `${summary}\n\nEvents:\n${JSON.stringify(limitedEvents)}`,
+      }
     },
   })
 }

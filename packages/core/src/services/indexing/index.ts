@@ -43,6 +43,7 @@ class IndexingService implements IIndexingService {
     if (events.length === 0) return
 
     // Default embedding source: concatenate title + summary + message
+    // Fallback to required fields (action + source) if all optional fields are missing
     const getEmbeddingSource =
       options?.embeddingSource ??
       ((event: TActivityEvent) => {
@@ -50,6 +51,13 @@ class IndexingService implements IIndexingService {
         if (event.title) parts.push(event.title)
         if (event.summary) parts.push(event.summary)
         if (event.message) parts.push(event.message)
+
+        // If no optional text fields, fallback to required fields to ensure meaningful embeddings
+        if (parts.length === 0) {
+          parts.push(event.action)
+          parts.push(event.source)
+        }
+
         return parts.join(' ')
       })
 
@@ -122,21 +130,26 @@ export const createIndexingService = (
   })
 
   // Create embedding adapter for service to use
+  // Use the dimension from options to ensure consistency with caller's configuration
+  // The default model type is 'high', so the provided dimension should be respected
+  // We use the provided dimension for all model types to respect the caller's intent
+  // Note: The interface expects specific dimensions per model type, but we prioritize
+  // the caller's configuration to avoid dimension mismatch errors
   const embeddingAdapter = createEmbeddingAdapter({
     options: {
       provider: options.embedding.provider,
       model: {
         low: {
           model: options.embedding.model,
-          dimension: 768,
+          dimension: options.embedding.dimension as any,
         },
         medium: {
           model: options.embedding.model,
-          dimension: 3072,
+          dimension: options.embedding.dimension as any,
         },
         high: {
           model: options.embedding.model,
-          dimension: 3072,
+          dimension: options.embedding.dimension as any,
         },
       },
     },
