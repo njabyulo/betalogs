@@ -55,6 +55,7 @@ The "story" object MUST contain exactly these fields (no extra fields like "quer
 - **impact**: Key outcomes with citations - REQUIRED
 - **duration**: Human-readable duration string (e.g., "5 hours 24 minutes") or null - REQUIRED
 - **eventCount**: Total number of events (integer) - REQUIRED
+- **queryString**: Base64-encoded query string for fetching full activity logs via REST API - REQUIRED
 
 **WORKFLOW STEPS:**
 
@@ -80,8 +81,11 @@ The "story" object MUST contain exactly these fields (no extra fields like "quer
    - **source**: Service/source name from search results (same as "service" field from search results) (required)
    - **payload**: JSON object containing all available event data from search results (at minimum: id, timestamp, level, service, message) (required)
    - **citations**: Array of citation strings like ["[id: <event-id>]"] (required)
-9) Produce an evidence-based summary and impact with citations
-10) Output JSON in Story format - **MUST match SStoryOutput exactly with "story" wrapper**
+9) Extract "queryString" from storySearch tool output - this is a base64-encoded query string that the frontend will use to fetch full activity logs via REST API. Include this field in the story output.
+10) Produce an evidence-based summary and impact with citations
+11) Output JSON in Story format - **MUST match SStoryOutput exactly with "story" wrapper**
+
+**IMPORTANT:** The storySearch tool returns compressed/refined data optimized for story generation. The "queryString" field allows the frontend to fetch the complete, uncompressed activity logs separately via the /api/activities/search endpoint, preventing model context overload while maintaining full data access for the UI.
 
 **CRITICAL: Do NOT include a "query" field in the story object. Only include the fields listed above.**
 `

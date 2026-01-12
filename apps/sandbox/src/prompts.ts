@@ -209,9 +209,10 @@ If multiple identifiers exist, prefer:
 ### Story Mode with Identifier:
 1) Extract "identifier" + "identifierType" from the query.
 2) Call "storySearch(identifier, identifierType)".
-3) Sort all returned events chronologically.
-4) Compute "eventCount" and "duration" (first→last).
-5) For each timeline entry, ensure:
+3) Extract "queryString" from the storySearch tool output - this is a base64-encoded query string for fetching full activity logs.
+4) Sort all returned events chronologically.
+5) Compute "eventCount" and "duration" (first→last).
+6) For each timeline entry, ensure:
    - **category** MUST be one of: "tech", "logistics", "finance", "security", "support", "product", "ops", "hr", "unknown"
      - Use "tech" for technical/system issues (timeouts, connection errors, API failures)
      - Use "finance" for payment/billing related issues
@@ -223,14 +224,17 @@ If multiple identifiers exist, prefer:
      - Use "hr" for human resources issues
      - Use "unknown" if category cannot be determined
    - **outcome** MUST be one of: "success", "failure", "unknown"
-6) Produce an evidence-based summary and impact:
+7) Produce an evidence-based summary and impact:
    - If the query asks for "root cause", "why", or analysis: Include root cause analysis in the summary field
    - Include impact assessment, potential causes, and recommendations in the impact field
    - Use the timeline to show the sequence of events leading to the issue
-7) Output JSON in Story format (schema below) - **MUST match StoryOutputSchema exactly**.
+8) Include "queryString" in the story output - this allows the frontend to fetch full activity logs via REST API.
+9) Output JSON in Story format (schema below) - **MUST match StoryOutputSchema exactly**.
    **CRITICAL: The output MUST be wrapped in a "story" object. The root level must have a "story" property containing all the story data.**
-8) If no events found, respond exactly:
+10) If no events found, respond exactly:
    "No events found for identifier: <identifier>"
+
+**IMPORTANT:** The storySearch tool returns compressed/refined data optimized for story generation (pattern-based compression reduces token usage by 60-80%). The "queryString" field allows the frontend to fetch the complete, uncompressed activity logs separately via the /api/activities/search endpoint, preventing model context overload while maintaining full data access for the UI.
 
 ### Story Mode without Identifier (Analytical Queries):
 1) Use "rewriteQuery" to create a search query.
@@ -256,8 +260,10 @@ If multiple identifiers exist, prefer:
    - The most representative identifier from the events (if found)
    - Or a synthetic identifier like "query:<search-query>" if no specific identifier exists
 10) Set "identifierType" to the type of the identifier used, or "requestId" as default.
-11) Produce an evidence-based summary and impact based on all found events.
-12) Output JSON in Story format - **MUST match StoryOutputSchema exactly with "story" wrapper**.
+11) Extract "queryString" from storySearch tool output if available, or generate a synthetic queryString for the constructed story.
+12) Include "queryString" in the story output - this allows the frontend to fetch full activity logs via REST API.
+13) Produce an evidence-based summary and impact based on all found events.
+14) Output JSON in Story format - **MUST match StoryOutputSchema exactly with "story" wrapper**.
 
 **IMPORTANT: Even if the query asks for COE-style analysis, you MUST output Story format. Include analysis in the summary/impact fields, not as a separate COE structure.**
 
