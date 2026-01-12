@@ -102,8 +102,60 @@ export const createStorySearchTool = (
     opensearch: options.opensearch,
   })
 
-  // Maximum number of events to include in the model output to prevent token limit errors
   const MAX_EVENTS_IN_OUTPUT = 30
+
+  const selectRepresentativeEvents = (events: Array<{
+    id: string
+    timestamp: string
+    level: string
+    service: string
+    message: string
+  }>): Array<{
+    id: string
+    timestamp: string
+    level: string
+    service: string
+    message: string
+  }> => {
+    if (events.length <= MAX_EVENTS_IN_OUTPUT) {
+      return events
+    }
+
+    const critical = events.filter((e) =>
+      e.level === 'error' || e.level === 'critical' || e.level === 'failure'
+    )
+    const recent = events.slice(-10)
+    const early = events.slice(0, 10)
+
+    const selectedIds = new Set<string>()
+    const selected: typeof events = []
+
+    const addIfNotSelected = (event: typeof events[0]) => {
+      if (!selectedIds.has(event.id) && selected.length < MAX_EVENTS_IN_OUTPUT) {
+        selectedIds.add(event.id)
+        selected.push(event)
+      }
+    }
+
+    critical.forEach(addIfNotSelected)
+    early.forEach(addIfNotSelected)
+
+    const remaining = MAX_EVENTS_IN_OUTPUT - selected.length
+    if (remaining > 0) {
+      const middleStart = Math.floor(events.length * 0.3)
+      const middleEnd = Math.floor(events.length * 0.7)
+      const middleEvents = events.slice(middleStart, middleEnd)
+      const step = Math.max(1, Math.floor(middleEvents.length / remaining))
+
+      for (let i = 0; i < middleEvents.length && selected.length < MAX_EVENTS_IN_OUTPUT; i += step) {
+        addIfNotSelected(middleEvents[i]!)
+      }
+    }
+
+    recent.forEach(addIfNotSelected)
+
+    return selected.slice(0, MAX_EVENTS_IN_OUTPUT)
+  }
 
   return tool({
     description:
@@ -133,20 +185,38 @@ export const createStorySearchTool = (
       }))
     },
     toModelOutput: async ({ output }) => {
-      // Limit the number of events sent to the model to prevent token limit errors
       const events = Array.isArray(output) ? output : []
       const totalEvents = events.length
-      const limitedEvents = events.slice(0, MAX_EVENTS_IN_OUTPUT)
+      const selectedEvents = selectRepresentativeEvents(events)
 
-      // If we truncated events, include a note about the total count
-      const summary = totalEvents > MAX_EVENTS_IN_OUTPUT
-        ? `Found ${totalEvents} total events. Showing first ${MAX_EVENTS_IN_OUTPUT} events chronologically. Use these representative events to construct the story timeline.`
-        : `Found ${totalEvents} events.`
+      if (totalEvents <= MAX_EVENTS_IN_OUTPUT) {
+        return {
+          type: 'text' as const,
+          value: JSON.stringify({
+            total: totalEvents,
+            events: selectedEvents,
+          }),
+        }
+      }
 
-      // Use compact JSON (no indentation) to reduce token usage
+      const timeRange = {
+        start: events[0]?.timestamp,
+        end: events[events.length - 1]?.timestamp,
+      }
+
       return {
         type: 'text' as const,
-        value: `${summary}\n\nEvents:\n${JSON.stringify(limitedEvents)}`,
+        value: JSON.stringify({
+          total: totalEvents,
+          shown: selectedEvents.length,
+          selection: 'prioritized (critical events + temporal distribution)',
+          timeRange,
+          events: selectedEvents,
+          summary: {
+            omitted: totalEvents - selectedEvents.length,
+            note: `Selected ${selectedEvents.length} representative events from ${totalEvents} total. Includes all critical events plus evenly distributed samples across timeline.`,
+          },
+        }),
       }
     },
   })
