@@ -7,7 +7,25 @@ import { useStoryChat } from '~/features/story/hooks/useStoryChat'
 import { Card, CardContent } from '~/components/ui/card'
 
 export default function Home() {
-  const { events, storySummary, isLoading, handleChatSubmit } = useStoryChat()
+  const {
+    events,
+    storySummary,
+    isLoading,
+    handleChatSubmit,
+    fullLogs,
+    isLoadingFullLogs,
+    fetchFullLogs,
+    cacheStatus,
+  } = useStoryChat()
+
+  const handleLoadFullLogs = () => {
+    if (storySummary?.queryString) {
+      fetchFullLogs(storySummary.queryString)
+    }
+  }
+
+  // Use full logs if available, otherwise use compressed events
+  const displayEvents = fullLogs.length > 0 ? fullLogs : events
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -22,7 +40,14 @@ export default function Home() {
           )}
           <Card>
             <CardContent>
-              <ActivityTimeline events={events} />
+              <ActivityTimeline
+                events={displayEvents}
+                storySummary={storySummary}
+                isLoadingFullLogs={isLoadingFullLogs}
+                onLoadFullLogs={handleLoadFullLogs}
+                cacheStatus={cacheStatus}
+                hasFullLogs={fullLogs.length > 0}
+              />
             </CardContent>
           </Card>
         </div>

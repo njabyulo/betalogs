@@ -37,6 +37,11 @@ export interface ICitation {
 
 export interface IActivityTimelineProps {
   events: IActivityEvent[]
+  storySummary?: TStoryOutput['story'] | null
+  isLoadingFullLogs?: boolean
+  onLoadFullLogs?: () => void
+  cacheStatus?: 'fresh' | 'cached' | null
+  hasFullLogs?: boolean
 }
 
 export interface ICommentInputProps {

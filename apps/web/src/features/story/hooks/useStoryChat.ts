@@ -3,9 +3,50 @@ import { TextStreamChatTransport } from 'ai'
 import { useState, useEffect, useCallback } from 'react'
 import type { IActivityEvent, TStoryOutput } from '~/features/story/types'
 
+interface IFullLogEvent {
+  id: string
+  timestamp: string
+  level: string
+  service: string
+  message: string
+  metadata: Record<string, unknown>
+}
+
+interface IActivityLogResponse {
+  events: IFullLogEvent[]
+  total: number
+  timeRange: {
+    from: string
+    to: string
+  }
+  pagination?: {
+    page: number
+    pageSize: number
+    hasMore: boolean
+    nextCursor?: string
+  }
+  cache?: {
+    etag: string
+    expiresAt?: string
+  }
+}
+
+interface ICacheEntry {
+  data: IActivityLogResponse
+  etag: string
+  timestamp: number
+}
+
+// Client-side cache with 5-minute TTL
+const cache = new Map<string, ICacheEntry>()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 export function useStoryChat() {
     const [events, setEvents] = useState<IActivityEvent[]>([])
     const [storySummary, setStorySummary] = useState<TStoryOutput['story'] | null>(null)
+    const [fullLogs, setFullLogs] = useState<IActivityEvent[]>([])
+    const [isLoadingFullLogs, setIsLoadingFullLogs] = useState(false)
+    const [cacheStatus, setCacheStatus] = useState<'fresh' | 'cached' | null>(null)
 
     const { sendMessage, status, error } = useChat({
         transport: new TextStreamChatTransport({ api: '/api/chat' }),
@@ -37,6 +78,8 @@ export function useStoryChat() {
                 }))
 
                 setEvents(newEvents)
+                setFullLogs([]) // Reset full logs when new story is generated
+                setCacheStatus(null)
             } catch (parseError) {
                 console.error('Failed to parse story response:', parseError)
                 const textPart = message.parts.find((part): part is { type: 'text'; text: string } => part.type === 'text')
@@ -86,6 +129,131 @@ export function useStoryChat() {
         [sendMessage]
     )
 
+    /**
+     * Fetch full activity logs using queryString from story output
+     */
+    const fetchFullLogs = useCallback(async (
+        queryString: string,
+        page: number = 1,
+        pageSize: number = 50
+    ) => {
+        if (!queryString) {
+            console.error('No queryString provided')
+            return
+        }
+
+        setIsLoadingFullLogs(true)
+        setCacheStatus(null)
+
+        try {
+            // Check cache first
+            const cacheKey = `${queryString}:${page}:${pageSize}`
+            const cached = cache.get(cacheKey)
+            const now = Date.now()
+
+            if (cached && (now - cached.timestamp) < CACHE_TTL) {
+                // Use cached data
+                setFullLogs(
+                    cached.data.events.map((event) => ({
+                        id: `full-${event.id}`,
+                        type: 'comment' as const,
+                        user: {
+                            name: event.service,
+                            initial: event.service.charAt(0).toUpperCase(),
+                        },
+                        action: event.level,
+                        content: event.message,
+                        timestamp: new Date(event.timestamp),
+                    }))
+                )
+                setCacheStatus('cached')
+                setIsLoadingFullLogs(false)
+                return
+            }
+
+            // Build request with ETag if available
+            const headers: HeadersInit = {
+                'Content-Type': 'application/json',
+            }
+            if (cached?.etag) {
+                headers['If-None-Match'] = `"${cached.etag}"`
+            }
+
+            const url = new URL('/api/activities/search', window.location.origin)
+            url.searchParams.set('query', queryString)
+            url.searchParams.set('page', page.toString())
+            url.searchParams.set('pageSize', pageSize.toString())
+
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                headers,
+            })
+
+            if (response.status === 304) {
+                // Not modified - use cached data
+                if (cached) {
+                    setFullLogs(
+                        cached.data.events.map((event) => ({
+                            id: `full-${event.id}`,
+                            type: 'comment' as const,
+                            user: {
+                                name: event.service,
+                                initial: event.service.charAt(0).toUpperCase(),
+                            },
+                            action: event.level,
+                            content: event.message,
+                            timestamp: new Date(event.timestamp),
+                        }))
+                    )
+                    setCacheStatus('cached')
+                }
+                setIsLoadingFullLogs(false)
+                return
+            }
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch full logs: ${response.statusText}`)
+            }
+
+            const data = (await response.json()) as IActivityLogResponse
+
+            // Update cache
+            const etag = response.headers.get('ETag')?.replace(/"/g, '') || data.cache?.etag || ''
+            cache.set(cacheKey, {
+                data,
+                etag,
+                timestamp: now,
+            })
+
+            // Clean old cache entries
+            for (const [key, entry] of cache.entries()) {
+                if (now - entry.timestamp >= CACHE_TTL) {
+                    cache.delete(key)
+                }
+            }
+
+            setFullLogs(
+                data.events.map((event) => ({
+                    id: `full-${event.id}`,
+                    type: 'comment' as const,
+                    user: {
+                        name: event.service,
+                        initial: event.service.charAt(0).toUpperCase(),
+                    },
+                    action: event.level,
+                    content: event.message,
+                    timestamp: new Date(event.timestamp),
+                }))
+            )
+            setCacheStatus('fresh')
+        } catch (error) {
+            console.error('Failed to fetch full logs:', error)
+            setCacheStatus(null)
+        } finally {
+            setIsLoadingFullLogs(false)
+        }
+    }, [])
+
     const isLoading = status !== 'ready'
 
     return {
@@ -94,5 +262,9 @@ export function useStoryChat() {
         isLoading,
         handleChatSubmit,
         error,
+        fullLogs,
+        isLoadingFullLogs,
+        fetchFullLogs,
+        cacheStatus,
     }
 }
