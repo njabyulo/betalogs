@@ -8,7 +8,8 @@
     "lint": "turbo lint",
     "test": "turbo test",
     "type-check": "turbo type-check",
-    "clean": "turbo clean && rm -rf node_modules/.cache"
+    "clean": "turbo clean && rm -rf node_modules/.cache",
+    "clean:all": "turbo clean:all && rm -rf node_modules .turbo .sst"
   },
   "devDependencies": {
     "@turbo/gen": "catalog:",
