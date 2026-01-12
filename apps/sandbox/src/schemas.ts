@@ -66,6 +66,7 @@ export const StoryOutputSchema = z.object({
         impact: z.string().describe('Key outcomes with citations'),
         duration: z.string().nullable().describe('Human-readable duration or null'),
         eventCount: z.number().int().min(0).describe('Total number of events'),
+        queryString: z.string().describe('Base64-encoded query string for fetching full activity logs via REST API'),
     }),
 })
 
