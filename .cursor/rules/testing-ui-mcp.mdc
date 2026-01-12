@@ -1,0 +1,347 @@
+---
+description: Guide for using Chrome DevTools MCP for E2E testing, API validation, and performance analysis
+globs: apps/web/**/*
+alwaysApply: false
+---
+
+# Chrome DevTools MCP Testing Guide
+
+This guide explains how to use Chrome DevTools MCP (Model Context Protocol) for comprehensive browser-based testing of the Betalogs web application.
+
+## Overview
+
+Chrome DevTools MCP enables AI agents to interact directly with live Chrome browser sessions for real-time debugging, performance analysis, network inspection, and automated testing. This is particularly useful for E2E testing of Next.js API routes, frontend components, and complete user workflows.
+
+## When to Use Chrome DevTools MCP
+
+Use Chrome DevTools MCP for:
+- **E2E Testing**: Complete user flow testing from frontend to API
+- **API Endpoint Validation**: Verify REST API responses, headers, and caching behavior
+- **Performance Testing**: Record performance traces and measure response times
+- **Network Inspection**: Analyze API calls, verify ETag headers, check compression
+- **UI Interaction Testing**: Simulate user interactions (clicks, form submissions, navigation)
+- **Error Detection**: Monitor console messages and network errors
+- **Visual Verification**: Take screenshots to verify UI state
+
+## Setup
+
+Chrome DevTools MCP is already configured in Cursor. The MCP server connects to Chrome instances automatically or via remote debugging port.
+
+### Starting a Test Session
+
+1. Start the Next.js dev server: `pnpm --filter web dev`
+2. Chrome DevTools MCP will automatically detect running Chrome instances
+3. Use MCP tools to navigate and interact with the application
+
+## Key MCP Tools for Testing
+
+### Navigation & Page Management
+- `navigate_page`: Navigate to URLs (e.g., `http://localhost:3000`)
+- `list_pages`: List all open browser pages
+- `select_page`: Select a specific page for testing
+- `resize_page`: Resize browser window for responsive testing
+
+### Page Inspection
+- `take_snapshot`: Get accessibility tree snapshot (better than screenshot for structure)
+- `take_screenshot`: Capture visual state of page or element
+- `evaluate_script`: Execute JavaScript to extract data or verify state
+
+### User Interaction
+- `click`: Click on elements (buttons, links, inputs)
+- `fill`: Type text into input fields
+- `fill_form`: Fill multiple form fields at once
+- `press_key`: Simulate keyboard input (Enter, Escape, shortcuts)
+- `hover`: Hover over elements
+- `drag`: Drag and drop elements
+
+### Network & API Testing
+- `list_network_requests`: Get all network requests since page load
+- `get_network_request`: Inspect specific request details (headers, response, timing)
+- `list_console_messages`: Check for errors, warnings, or logs
+- `get_console_message`: Get details of specific console message
+
+### Performance Testing
+- `performance_start_trace`: Begin performance recording
+- `performance_stop_trace`: Stop and analyze performance trace
+- `performance_analyze_insight`: Get detailed performance insights
+
+## Testing Workflows
+
+### Story Generation Flow Test
+
+```typescript
+// 1. Navigate to story page
+navigate_page({ url: 'http://localhost:3000' })
+
+// 2. Take snapshot to verify page loaded
+take_snapshot()
+
+// 3. Find and fill search input
+fill({ uid: '<input-element-uid>', value: 'timeline for order ord_uvw789' })
+
+// 4. Click submit button
+click({ uid: '<submit-button-uid>' })
+
+// 5. Wait for response
+wait_for({ text: 'Summary' })
+
+// 6. Extract queryString from response
+evaluate_script({
+  function: `() => {
+    const story = JSON.parse(document.querySelector('[data-story]')?.textContent || '{}');
+    return story.story?.queryString;
+  }`
+})
+
+// 7. Verify story output displayed
+take_snapshot()
+```
+
+### API Endpoint Testing
+
+```typescript
+// 1. Extract queryString from story (see above)
+
+// 2. Navigate to API endpoint
+navigate_page({ 
+  url: `http://localhost:3000/api/activities/search?query=${queryString}` 
+})
+
+// 3. Check network requests
+const requests = list_network_requests()
+const apiRequest = requests.find(r => r.url.includes('/api/activities/search'))
+
+// 4. Inspect API response
+get_network_request({ reqid: apiRequest.id })
+
+// 5. Verify ETag header
+// Check response.headers for 'ETag' and 'Cache-Control'
+
+// 6. Test conditional request
+// Make second request with If-None-Match header
+// Should return 304 Not Modified
+```
+
+### ETag Caching Validation
+
+```typescript
+// 1. First request - should return 200 with ETag
+navigate_page({ url: '/api/activities/search?query=...' })
+const firstRequest = get_network_request({ reqid: <reqid> })
+const etag = firstRequest.responseHeaders['ETag']
+
+// 2. Second request with If-None-Match header
+// Use evaluate_script to make fetch with headers
+evaluate_script({
+  function: `async () => {
+    const response = await fetch('/api/activities/search?query=...', {
+      headers: { 'If-None-Match': ${etag} }
+    });
+    return { status: response.status, headers: Object.fromEntries(response.headers) };
+  }`
+})
+
+// 3. Verify 304 Not Modified response
+```
+
+### Progressive Loading Test
+
+```typescript
+// 1. Verify compressed timeline displays initially
+take_snapshot()
+// Check for "Load Full Logs" button
+
+// 2. Click "Load Full Logs" button
+click({ uid: '<load-full-logs-button-uid>' })
+
+// 3. Wait for full logs to load
+wait_for({ text: 'Showing full activity logs' })
+
+// 4. Verify API call was made
+const requests = list_network_requests()
+const fullLogsRequest = requests.find(r => 
+  r.url.includes('/api/activities/search')
+)
+
+// 5. Verify pagination controls appear (if applicable)
+take_snapshot()
+```
+
+### Performance Testing
+
+```typescript
+// 1. Start performance trace
+performance_start_trace({ reload: true, autoStop: false })
+
+// 2. Perform user action (e.g., submit story query)
+fill({ uid: '<input-uid>', value: 'timeline for order ord_uvw789' })
+click({ uid: '<submit-uid>' })
+
+// 3. Wait for completion
+wait_for({ text: 'Summary' })
+
+// 4. Stop trace
+performance_stop_trace()
+
+// 5. Analyze performance
+// Check for bottlenecks, measure API response times
+```
+
+### Error Handling Test
+
+```typescript
+// 1. Test with invalid query string
+navigate_page({ 
+  url: '/api/activities/search?query=invalid-base64-string' 
+})
+
+// 2. Check console for errors
+const consoleMessages = list_console_messages({ types: ['error'] })
+
+// 3. Verify error message displayed
+take_snapshot()
+// Check for error UI elements
+
+// 4. Test with missing identifier
+// Submit query without identifier
+// Verify appropriate error handling
+```
+
+## Best Practices
+
+### 1. Always Take Snapshots Before Actions
+```typescript
+take_snapshot() // Verify initial state
+// Perform action
+take_snapshot() // Verify final state
+```
+
+### 2. Use evaluate_script for Data Extraction
+```typescript
+// Extract data from page
+evaluate_script({
+  function: `() => {
+    const story = JSON.parse(document.querySelector('[data-story]')?.textContent || '{}');
+    return {
+      queryString: story.story?.queryString,
+      eventCount: story.story?.eventCount,
+      identifier: story.story?.identifier
+    };
+  }`
+})
+```
+
+### 3. Verify Network Requests
+```typescript
+// Always check network requests after API calls
+const requests = list_network_requests()
+const apiRequest = requests.find(r => r.url.includes('/api/'))
+
+// Verify:
+// - Request was made
+// - Response status (200, 304, etc.)
+// - Headers (ETag, Cache-Control)
+// - Response time (<200ms with cache, <500ms without)
+```
+
+### 4. Check Console for Errors
+```typescript
+// Always check console after actions
+const errors = list_console_messages({ types: ['error', 'warn'] })
+// Verify no unexpected errors
+```
+
+### 5. Use Performance Traces for Optimization
+```typescript
+// Record traces for performance-critical flows
+performance_start_trace({ reload: true })
+// Perform action
+performance_stop_trace()
+// Analyze bottlenecks
+```
+
+## Testing Checklist
+
+When testing story mode enhancements:
+
+- [ ] Story generation with identifier works
+- [ ] queryString is present in story output
+- [ ] Compressed timeline displays correctly
+- [ ] "Load Full Logs" button appears when queryString exists
+- [ ] Full logs API endpoint returns correct data
+- [ ] ETag headers are present in API responses
+- [ ] Conditional requests (304 Not Modified) work
+- [ ] Client-side caching functions correctly
+- [ ] Cache status indicators display properly
+- [ ] Pagination works for large datasets
+- [ ] Error handling works for invalid inputs
+- [ ] Performance meets targets (<200ms with cache, <500ms without)
+- [ ] No console errors during normal operation
+- [ ] Network requests are optimized (gzip compression)
+
+## Common Patterns
+
+### Pattern: Extract and Use queryString
+```typescript
+// Extract queryString from story
+const queryString = await evaluate_script({
+  function: `() => {
+    const story = JSON.parse(document.querySelector('[data-story]')?.textContent || '{}');
+    return story.story?.queryString;
+  }`
+})
+
+// Use it to test API
+navigate_page({ 
+  url: `http://localhost:3000/api/activities/search?query=${queryString}` 
+})
+```
+
+### Pattern: Verify API Response Headers
+```typescript
+const request = get_network_request({ reqid: <reqid> })
+const headers = request.responseHeaders
+
+// Verify ETag
+if (!headers['ETag']) {
+  throw new Error('Missing ETag header')
+}
+
+// Verify Cache-Control
+if (!headers['Cache-Control']?.includes('max-age=300')) {
+  throw new Error('Incorrect Cache-Control header')
+}
+```
+
+### Pattern: Test Caching Behavior
+```typescript
+// First request
+navigate_page({ url: '/api/activities/search?query=...' })
+const firstRequest = get_network_request({ reqid: <reqid> })
+const etag = firstRequest.responseHeaders['ETag']
+
+// Second request (should use cache)
+navigate_page({ url: '/api/activities/search?query=...' })
+const secondRequest = get_network_request({ reqid: <reqid> })
+
+// Verify cache hit (304 or faster response)
+if (secondRequest.status !== 304 && secondRequest.responseTime >= firstRequest.responseTime) {
+  console.warn('Cache may not be working correctly')
+}
+```
+
+## Integration with Development Workflow
+
+1. **Before Committing**: Run key E2E tests using Chrome DevTools MCP
+2. **During Development**: Use MCP tools to quickly verify changes
+3. **Performance Testing**: Record traces before/after optimizations
+4. **API Testing**: Verify new endpoints work correctly with real browser
+5. **Regression Testing**: Re-run tests after refactoring
+
+## Notes
+
+- Chrome DevTools MCP works best with local development servers
+- Always verify the dev server is running before testing
+- Use `take_snapshot` for structure verification, `take_screenshot` for visual verification
+- Network requests are preserved across navigations (use `includePreservedRequests: true`)
+- Performance traces can be large - stop them promptly after testing
