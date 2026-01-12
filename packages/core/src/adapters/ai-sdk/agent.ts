@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google'
-import { LanguageModel, Output, ToolLoopAgent, ToolSet } from 'ai'
+import { ContentPart, LanguageModel, StepResult, ToolLoopAgent, ToolSet } from 'ai'
 import {
   IAgentAdapterGenerateTextArgs,
   IAgentAdapterGenerateTextResult,
@@ -27,17 +27,34 @@ export class AgentAdapter<D, T extends ToolSet, TSchema extends z.ZodTypeAny | u
       instructions: options.instructions,
       tools: options.tools as T,
       stopWhen: options.stopWhen,
-      onStepFinish: (step: any) => {
+      onStepFinish: (step: StepResult<T>) => {
         console.log('================================================')
-        step.content.forEach((part: any) => {
+        step.content.forEach((part: ContentPart<T>) => {
           if (part.type === 'text') {
             console.log({
               text: part.text,
             })
           } else if (part.type === 'tool-result') {
-            console.log({
-              output: part.output,
-            })
+            const output = part.output
+            if (output && typeof output === 'object' && 'total' in output && 'shown' in output) {
+              const total = output.total as number
+              const shown = output.shown as number
+              if (total > shown) {
+                console.log({
+                  toolName: part.toolName,
+                  output: `[Compressed: ${shown}/${total} events]`,
+                  compression: 'Smart selection applied (critical + temporal distribution)',
+                })
+              } else {
+                console.log({
+                  output: part.output,
+                })
+              }
+            } else {
+              console.log({
+                output: part.output,
+              })
+            }
           } else if (part.type === 'tool-call') {
             console.log({
               toolName: part.toolName,
