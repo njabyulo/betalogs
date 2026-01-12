@@ -801,9 +801,12 @@ class SearchAdapter implements ISearchAdapter {
 
     const searchIndices = ['bl-activity-*', this.index]
 
+    // Enable request caching for repeated queries
+    // This caches the query results at the index level for faster subsequent requests
     const resp = await this.client.search({
       index: searchIndices,
       body,
+      request_cache: true,
     })
 
     const hits = (resp.body?.hits?.hits ?? []).map((h: any) => ({
