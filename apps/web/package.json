@@ -18,6 +18,7 @@
     "@betalogs/shared": "workspace:*",
     "@radix-ui/react-collapsible": "catalog:",
     "@radix-ui/react-tooltip": "catalog:",
+    "@tailwindcss/postcss": "catalog:",
     "ai": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
@@ -28,18 +29,17 @@
     "react-dom": "catalog:",
     "react-icons": "catalog:",
     "tailwind-merge": "catalog:",
+    "tailwindcss": "catalog:",
+    "tw-animate-css": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
     "eslint": "catalog:",
     "eslint-config-next": "catalog:",
-    "tailwindcss": "catalog:",
-    "tw-animate-css": "catalog:",
     "typescript": "catalog:"
   }
 }
