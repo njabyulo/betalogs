@@ -1,9 +1,9 @@
-import { Hono } from 'hono'
-import metadataRegistry from './handlers/metadata-registry'
+import { Hono } from "hono";
+import metadataRegistry from "./handlers/metadata-registry";
 
-const app = new Hono()
+const app = new Hono();
 
 // Register metadata registry routes
-app.route('/', metadataRegistry)
+app.route("/", metadataRegistry);
 
-export default app
+export default app;
