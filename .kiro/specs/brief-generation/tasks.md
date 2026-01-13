@@ -27,7 +27,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create simple root cause classification based on error patterns
     - _Requirements: 10.1_
 
-  - [ ]* 2.3 Write property test for AI service integration
+  - [ ]\* 2.3 Write property test for AI service integration
     - **Property 10: Graceful Error Handling** (AI service aspects)
     - **Validates: Requirements 10.1, 10.5**
 
@@ -39,7 +39,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create story summary generation with what/when/where/who analysis
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-  - [ ]* 3.2 Write property test for story analysis
+  - [ ]\* 3.2 Write property test for story analysis
     - **Property 1: Story Analysis Completeness**
     - **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
 
@@ -52,7 +52,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create statistical analysis of failure rates and patterns
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ]* 4.2 Write property test for cluster analysis
+  - [ ]\* 4.2 Write property test for cluster analysis
     - **Property 2: Cluster Analysis Comprehensiveness**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
@@ -68,7 +68,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create suspect change identification and correlation logic
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ]* 6.2 Write property test for change correlation
+  - [ ]\* 6.2 Write property test for change correlation
     - **Property 3: Change Correlation Accuracy**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
 
@@ -81,7 +81,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create both quantitative metrics and qualitative impact descriptions
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ]* 7.2 Write property test for impact assessment
+  - [ ]\* 7.2 Write property test for impact assessment
     - **Property 4: Impact Assessment Completeness**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
@@ -94,7 +94,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create rationale provision for each recommended action
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 8.2 Write property test for action plan generation
+  - [ ]\* 8.2 Write property test for action plan generation
     - **Property 5: Action Plan Generation**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
@@ -107,7 +107,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create claim validation to avoid unsupported assertions
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ]* 9.2 Write property test for evidence citation
+  - [ ]\* 9.2 Write property test for evidence citation
     - **Property 6: Evidence Citation Integrity**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
@@ -118,7 +118,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create performance monitoring and optimization controls
     - _Requirements: 7.4_
 
-  - [ ]* 10.2 Write property test for progress indication
+  - [ ]\* 10.2 Write property test for progress indication
     - **Property 7: Progress Indication**
     - **Validates: Requirements 7.4**
 
@@ -131,7 +131,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create audit trail generation for all brief operations
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ]* 11.2 Write property test for tenant isolation
+  - [ ]\* 11.2 Write property test for tenant isolation
     - **Property 8: Tenant Isolation Enforcement**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
 
@@ -144,7 +144,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create support for common question types
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ]* 12.2 Write property test for custom analysis
+  - [ ]\* 12.2 Write property test for custom analysis
     - **Property 9: Custom Analysis Support**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5**
 
@@ -157,7 +157,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create retry mechanisms and circuit breakers for external services
     - _Requirements: 10.2, 10.3, 10.4, 10.5_
 
-  - [ ]* 13.2 Write property test for error handling
+  - [ ]\* 13.2 Write property test for error handling
     - **Property 10: Graceful Error Handling** (comprehensive)
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
@@ -170,7 +170,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create caching layer for frequently accessed briefs
     - _Requirements: All requirements (storage layer)_
 
-  - [ ]* 14.2 Write integration tests for brief storage
+  - [ ]\* 14.2 Write integration tests for brief storage
     - Test brief persistence and retrieval across storage systems
     - Test query performance and indexing effectiveness
     - Test cache behavior and invalidation
@@ -184,7 +184,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Create unified interface for all brief generation operations
     - _Requirements: All requirements (orchestration)_
 
-  - [ ]* 15.2 Write integration tests for brief generation
+  - [ ]\* 15.2 Write integration tests for brief generation
     - Test end-to-end brief generation for various story types
     - Test complex scenarios with multiple analysis components
     - Test performance with large stories and clusters
@@ -204,7 +204,7 @@ This implementation plan converts the brief generation design into discrete codi
     - Wire AI service integration with proper error handling
     - _Requirements: All requirements (processing pipeline)_
 
-  - [ ]* 16.3 Write API integration tests
+  - [ ]\* 16.3 Write API integration tests
     - Test brief generation and retrieval endpoints
     - Test custom analysis features through API
     - Test error handling and edge cases

@@ -18,7 +18,7 @@ This implementation plan converts the activity event processing design into disc
     - Add required field validation and data type checking
     - _Requirements: 1.1, 1.2, 2.1, 3.1, 4.1, 5.1_
 
-  - [ ]* 2.2 Write property tests for event validation
+  - [ ]\* 2.2 Write property tests for event validation
     - **Property 1: Event Category Validation**
     - **Property 2: Core Field Validation**
     - **Validates: Requirements 1.1, 1.2, 2.1, 3.1, 4.1, 5.1**
@@ -28,7 +28,7 @@ This implementation plan converts the activity event processing design into disc
     - Add unique eventId generation and timestamp preservation
     - _Requirements: 1.3, 1.4, 1.5_
 
-  - [ ]* 2.4 Write property tests for normalization
+  - [ ]\* 2.4 Write property tests for normalization
     - **Property 3: Event Normalization Consistency**
     - **Property 4: Unique Event ID Assignment**
     - **Property 5: Timestamp Preservation**
@@ -59,7 +59,7 @@ This implementation plan converts the activity event processing design into disc
     - Add sensitive data handling according to data minimization policies
     - _Requirements: 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 3.5 Write property tests for category-specific processing
+  - [ ]\* 3.5 Write property tests for category-specific processing
     - **Property 6: Category-Specific Action Support**
     - **Property 7: Data Field Preservation**
     - **Property 8: Outcome Classification**
@@ -75,7 +75,7 @@ This implementation plan converts the activity event processing design into disc
     - Implement fallback correlation for events without trace context
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ]* 5.2 Write property tests for correlation
+  - [ ]\* 5.2 Write property tests for correlation
     - **Property 9: Correlation Data Preservation**
     - **Property 10: Fallback Correlation Support**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
@@ -87,7 +87,7 @@ This implementation plan converts the activity event processing design into disc
     - Implement security violation detection and logging
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-  - [ ]* 6.2 Write property test for tenant isolation
+  - [ ]\* 6.2 Write property test for tenant isolation
     - **Property 11: Tenant Isolation Enforcement**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
 
@@ -96,7 +96,7 @@ This implementation plan converts the activity event processing design into disc
     - Include tenant context and operation details in audit logs
     - _Requirements: 7.5_
 
-  - [ ]* 6.4 Write property test for audit trails
+  - [ ]\* 6.4 Write property test for audit trails
     - **Property 12: Audit Trail Creation**
     - **Validates: Requirements 7.5**
 
@@ -106,7 +106,7 @@ This implementation plan converts the activity event processing design into disc
     - Implement size limit handling and truncation policies
     - _Requirements: 8.1, 8.2, 8.3_
 
-  - [ ]* 7.2 Write property tests for error handling
+  - [ ]\* 7.2 Write property tests for error handling
     - **Property 13: Validation Error Handling**
     - **Validates: Requirements 8.1, 8.2, 8.3**
 
@@ -116,7 +116,7 @@ This implementation plan converts the activity event processing design into disc
     - Implement sensitive data redaction policies
     - _Requirements: 8.4, 8.5_
 
-  - [ ]* 7.4 Write property tests for failure recovery
+  - [ ]\* 7.4 Write property tests for failure recovery
     - **Property 14: Processing Failure Recovery**
     - **Property 15: Sensitive Data Handling**
     - **Validates: Requirements 8.4, 8.5**
@@ -128,7 +128,7 @@ This implementation plan converts the activity event processing design into disc
     - Implement S3 archival for immutable event storage
     - _Requirements: 9.1, 9.3, 9.4_
 
-  - [ ]* 8.2 Write property tests for storage
+  - [ ]\* 8.2 Write property tests for storage
     - **Property 16: Storage and Indexing**
     - **Property 17: Archival and Retention**
     - **Validates: Requirements 9.1, 9.3, 9.4, 9.5**
@@ -145,7 +145,7 @@ This implementation plan converts the activity event processing design into disc
     - Ensure round-trip consistency and data integrity preservation
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ]* 9.2 Write property test for serialization
+  - [ ]\* 9.2 Write property test for serialization
     - **Property 18: Serialization Round-Trip Consistency**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
@@ -162,7 +162,7 @@ This implementation plan converts the activity event processing design into disc
     - Add error handling and dead letter queue integration
     - _Requirements: All requirements (processing pipeline)_
 
-  - [ ]* 10.3 Write integration tests for API and pipeline
+  - [ ]\* 10.3 Write integration tests for API and pipeline
     - Test end-to-end event processing flows
     - Test error scenarios and recovery mechanisms
     - _Requirements: All requirements (integration)_

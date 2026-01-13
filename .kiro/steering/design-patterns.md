@@ -7,6 +7,7 @@ inclusion: always
 ## Core Patterns
 
 ### Service Pattern
+
 - Encapsulate business logic and orchestrate operations
 - Implement in `packages/core/src/services/` directory
 - Services coordinate between repositories and adapters
@@ -14,6 +15,7 @@ inclusion: always
 - Examples: `UserService`, `PaymentService`, `NotificationService`
 
 ### Repository Pattern
+
 - Abstract data access layer and provide clean interface for data operations
 - Implement in `packages/core/src/repositories/` directory
 - Define interfaces for data operations, implement with specific data sources
@@ -21,6 +23,7 @@ inclusion: always
 - Examples: `UserRepository`, `OrderRepository`, `ProductRepository`
 
 ### Adapter Pattern
+
 - Integrate third-party services and APIs with standardized interfaces
 - Implement in `packages/core/src/adapters/` directory
 - Standardize external service interfaces for internal consumption
@@ -28,12 +31,14 @@ inclusion: always
 - Examples: `PaymentAdapter`, `EmailAdapter`, `SearchAdapter`
 
 ### Factory Method & Abstract Factory
+
 - Use Factory patterns for creating complex objects with multiple variants
 - Abstract Factory for families of related objects (e.g., different database providers)
 - Implement in `packages/core/src/factories/` directory
 - Example: `UserFactory`, `NotificationFactory`, `DatabaseProviderFactory`
 
 ### Strategy Pattern
+
 - Implement Strategy for algorithms that can vary at runtime
 - Use for business rules, validation strategies, and processing logic
 - Store strategies in `packages/core/src/strategies/` directory
@@ -42,6 +47,7 @@ inclusion: always
 ## Implementation Guidelines
 
 ### Service Pattern Structure
+
 ```typescript
 // Service interface
 interface UserService {
@@ -66,6 +72,7 @@ class UserServiceImpl implements UserService {
 ```
 
 ### Repository Pattern Structure
+
 ```typescript
 // Repository interface
 interface UserRepository {
@@ -86,6 +93,7 @@ class PostgresUserRepository implements UserRepository {
 ```
 
 ### Adapter Pattern Structure
+
 ```typescript
 // Target interface
 interface PaymentProcessor {
@@ -103,6 +111,7 @@ class StripeAdapter implements PaymentProcessor {
 ```
 
 ### Factory Pattern Structure
+
 ```typescript
 // Abstract Factory
 interface ServiceFactory {
@@ -119,7 +128,8 @@ class ProductionServiceFactory implements ServiceFactory {
 ```
 
 ### API Handler Structure
-```typescript
+
+````typescript
 // ✅ CORRECT: Handler only uses services
 import { UserService } from '@packages/core/services';
 
@@ -156,9 +166,10 @@ export const createUserHandler = async (c: Context) => {
 
 // ❌ INCORRECT: Handler directly accessing repository
 import { UserRepository } from '@packages/core/repositories'; // DON'T DO THIS
-```
+````
 
 ### Strategy Pattern Structure
+
 ```typescript
 // Strategy interface
 interface ValidationStrategy {
@@ -176,6 +187,7 @@ class Validator {
 ```
 
 ## Pattern Usage Guidelines
+
 - Use Service patterns to orchestrate business logic and coordinate between layers
 - Use Repository patterns to abstract data access and provide clean interfaces
 - Use Adapter patterns for external service integration
@@ -185,6 +197,7 @@ class Validator {
 - Document pattern usage in code comments
 
 ## Layer Interaction Flow
+
 ```
 API Handlers (apps/functions) → Services Only
 Services → Repositories → Data Sources
@@ -194,12 +207,14 @@ Factories → Create Services/Repositories/Adapters
 ```
 
 ## Architectural Boundaries
+
 - **API Handlers** (`apps/functions/`) MUST only consume services from `packages/core/src/services/`
 - Handlers should NOT directly access repositories, adapters, or strategies
 - All business logic coordination happens within services
 - This ensures clean separation and testability
 
 ## Directory Structure
+
 ```
 packages/core/src/
 ├── adapters/           # External service integrations

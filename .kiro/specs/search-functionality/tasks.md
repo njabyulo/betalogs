@@ -18,7 +18,7 @@ This implementation plan converts the search functionality design into discrete 
     - Add support for email_hash, userId, orderId, requestId, and traceId searches
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-  - [ ]* 2.2 Write property test for identifier search completeness
+  - [ ]\* 2.2 Write property test for identifier search completeness
     - **Property 1: Identifier Search Completeness**
     - **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
 
@@ -26,7 +26,7 @@ This implementation plan converts the search functionality design into discrete 
     - Add support for searching with multiple identifiers (union behavior)
     - _Requirements: 1.6_
 
-  - [ ]* 2.4 Write property test for multi-term search union
+  - [ ]\* 2.4 Write property test for multi-term search union
     - **Property 2: Multi-term Search Union**
     - **Validates: Requirements 1.6**
 
@@ -36,7 +36,7 @@ This implementation plan converts the search functionality design into discrete 
     - Add outcome and error classification filtering
     - _Requirements: 2.1, 2.3, 2.4, 2.5, 2.6, 2.7_
 
-  - [ ]* 3.2 Write property test for filter precision
+  - [ ]\* 3.2 Write property test for filter precision
     - **Property 3: Filter Precision**
     - **Validates: Requirements 2.1, 2.3, 2.4, 2.5, 2.6, 2.7**
 
@@ -45,7 +45,7 @@ This implementation plan converts the search functionality design into discrete 
     - Add tenant filtering to all search queries
     - _Requirements: 2.2, 6.1, 6.2_
 
-  - [ ]* 3.4 Write property test for tenant isolation enforcement
+  - [ ]\* 3.4 Write property test for tenant isolation enforcement
     - **Property 4: Tenant Isolation Enforcement**
     - **Validates: Requirements 2.2, 6.1, 6.2**
 
@@ -58,7 +58,7 @@ This implementation plan converts the search functionality design into discrete 
     - Add cluster size calculation and common characteristics extraction
     - _Requirements: 3.1, 3.2_
 
-  - [ ]* 5.2 Write property test for failure clustering consistency
+  - [ ]\* 5.2 Write property test for failure clustering consistency
     - **Property 5: Failure Clustering Consistency**
     - **Validates: Requirements 3.1, 3.2**
 
@@ -67,7 +67,7 @@ This implementation plan converts the search functionality design into discrete 
     - Implement ranking by impact score and recency
     - _Requirements: 3.3, 3.4_
 
-  - [ ]* 5.4 Write property tests for cluster navigation and ranking
+  - [ ]\* 5.4 Write property tests for cluster navigation and ranking
     - **Property 6: Cluster Navigation Completeness**
     - **Property 7: Cluster Ranking Order**
     - **Validates: Requirements 3.3, 3.4**
@@ -78,7 +78,7 @@ This implementation plan converts the search functionality design into discrete 
     - Implement consistent navigation and total count tracking
     - _Requirements: 4.4_
 
-  - [ ]* 6.2 Write property test for pagination consistency
+  - [ ]\* 6.2 Write property test for pagination consistency
     - **Property 8: Pagination Consistency**
     - **Validates: Requirements 4.4**
 
@@ -87,7 +87,7 @@ This implementation plan converts the search functionality design into discrete 
     - Include evidence counts, trace availability, and context information
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 6.4 Write property test for result metadata completeness
+  - [ ]\* 6.4 Write property test for result metadata completeness
     - **Property 9: Result Metadata Completeness**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
@@ -96,7 +96,7 @@ This implementation plan converts the search functionality design into discrete 
     - Implement search operation logging with parameters and tenant context
     - _Requirements: 6.3_
 
-  - [ ]* 7.2 Write property test for audit trail creation
+  - [ ]\* 7.2 Write property test for audit trail creation
     - **Property 10: Audit Trail Creation**
     - **Validates: Requirements 6.3**
 
@@ -104,7 +104,7 @@ This implementation plan converts the search functionality design into discrete 
     - Implement query rejection and security event logging for tenant violations
     - _Requirements: 6.4_
 
-  - [ ]* 7.4 Write property test for security violation handling
+  - [ ]\* 7.4 Write property test for security violation handling
     - **Property 11: Security Violation Handling**
     - **Validates: Requirements 6.4**
 
@@ -114,7 +114,7 @@ This implementation plan converts the search functionality design into discrete 
     - Implement descriptive error messages for malformed queries
     - _Requirements: 7.1, 7.2_
 
-  - [ ]* 8.2 Write property tests for error handling
+  - [ ]\* 8.2 Write property tests for error handling
     - **Property 12: Empty Result Handling**
     - **Property 13: Error Message Clarity**
     - **Validates: Requirements 7.1, 7.2**
@@ -124,7 +124,7 @@ This implementation plan converts the search functionality design into discrete 
     - Add query limiting for extremely broad searches
     - _Requirements: 7.3, 7.5_
 
-  - [ ]* 8.4 Write property tests for input handling
+  - [ ]\* 8.4 Write property tests for input handling
     - **Property 14: Special Character Handling**
     - **Property 15: Query Limiting**
     - **Validates: Requirements 7.3, 7.5**
@@ -136,7 +136,7 @@ This implementation plan converts the search functionality design into discrete 
     - Wire SearchService to HTTP endpoints
     - _Requirements: All requirements (API layer)_
 
-  - [ ]* 9.2 Write integration tests for API endpoints
+  - [ ]\* 9.2 Write integration tests for API endpoints
     - Test end-to-end search flows through HTTP interface
     - Test error responses and status codes
     - _Requirements: All requirements (integration)_
@@ -148,7 +148,7 @@ This implementation plan converts the search functionality design into discrete 
     - Include health check functionality
     - _Requirements: All requirements (data layer)_
 
-  - [ ]* 10.2 Write unit tests for OpenSearch integration
+  - [ ]\* 10.2 Write unit tests for OpenSearch integration
     - Test query construction and result parsing
     - Test error handling for OpenSearch failures
     - _Requirements: All requirements (data layer)_

@@ -26,7 +26,7 @@ This implementation plan converts the authentication and tenant management desig
     - Implement audit logs table with tamper evidence
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 2.2 Write property test for database schema constraints
+  - [ ]\* 2.2 Write property test for database schema constraints
     - **Property 1: Tenant isolation constraints**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
@@ -38,7 +38,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add feature flag resolution per tenant
     - _Requirements: 2.1, 2.2, 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ]* 3.2 Write property test for tenant resolution
+  - [ ]\* 3.2 Write property test for tenant resolution
     - **Property 2: Tenant context consistency**
     - **Validates: Requirements 2.1, 2.2, 8.1, 8.2, 8.3**
 
@@ -49,7 +49,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add security monitoring for isolation violations
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ]* 3.4 Write property test for tenant isolation
+  - [ ]\* 3.4 Write property test for tenant isolation
     - **Property 3: Data isolation enforcement**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
@@ -63,7 +63,7 @@ This implementation plan converts the authentication and tenant management desig
     - Configure Lambda function exports and AWS API Gateway integration
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-  - [ ]* 4.2 Write property test for authentication Lambda functions
+  - [ ]\* 4.2 Write property test for authentication Lambda functions
     - **Property 4: Authentication Lambda consistency**
     - **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
 
@@ -76,7 +76,7 @@ This implementation plan converts the authentication and tenant management desig
     - Configure AWS Secrets Manager integration for JWT secrets
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ]* 4.4 Write property test for JWT token lifecycle in Lambda
+  - [ ]\* 4.4 Write property test for JWT token lifecycle in Lambda
     - **Property 5: JWT token security properties**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
@@ -98,7 +98,7 @@ This implementation plan converts the authentication and tenant management desig
     - Configure Lambda function cold start optimization
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ]* 5.3 Write property test for session and validation Lambda functions
+  - [ ]\* 5.3 Write property test for session and validation Lambda functions
     - **Property 6: Session Lambda consistency**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
@@ -114,7 +114,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add GET /auth/permissions/check Lambda function for permission validation
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ]* 7.2 Write property test for RBAC Lambda functions
+  - [ ]\* 7.2 Write property test for RBAC Lambda functions
     - **Property 7: RBAC Lambda consistency**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
 
@@ -126,7 +126,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add Redis permission caching with Lambda-optimized connection pooling
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ]* 7.4 Write property test for permission checking Lambda functions
+  - [ ]\* 7.4 Write property test for permission checking Lambda functions
     - **Property 8: Permission checking consistency**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
 
@@ -147,7 +147,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add API key audit logging Lambda functions
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ]* 8.3 Write property test for API key Lambda functions
+  - [ ]\* 8.3 Write property test for API key Lambda functions
     - **Property 9: API key security properties**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
@@ -168,7 +168,7 @@ This implementation plan converts the authentication and tenant management desig
     - Create MFA audit logging for all operations
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [ ]* 9.3 Write property test for MFA Lambda functions
+  - [ ]\* 9.3 Write property test for MFA Lambda functions
     - **Property 10: MFA security consistency**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
 
@@ -190,7 +190,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add audit log integrity verification Lambda functions
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 10.3 Write property test for audit logging Lambda functions
+  - [ ]\* 10.3 Write property test for audit logging Lambda functions
     - **Property 11: Audit log completeness**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
@@ -214,7 +214,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add OAuth 2.0 token introspection support
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ]* 12.3 Write property test for external authentication Lambda functions
+  - [ ]\* 12.3 Write property test for external authentication Lambda functions
     - **Property 12: External auth consistency**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5**
 
@@ -235,7 +235,7 @@ This implementation plan converts the authentication and tenant management desig
     - Add user invitation and onboarding Lambda functions
     - _Requirements: 2.1, 2.2, 3.1, 3.2, 8.1, 8.2_
 
-  - [ ]* 13.3 Write integration tests for tenant management Lambda functions
+  - [ ]\* 13.3 Write integration tests for tenant management Lambda functions
     - Test complete tenant and user management flows
     - Test tenant isolation across management operations
     - Test permission enforcement in management Lambda functions
@@ -259,7 +259,7 @@ This implementation plan converts the authentication and tenant management desig
     - Configure Lambda authorizer functions for API Gateway
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2_
 
-  - [ ]* 14.3 Write integration tests for SDK and Lambda middleware
+  - [ ]\* 14.3 Write integration tests for SDK and Lambda middleware
     - Test complete authentication flows between Lambda functions
     - Test tenant isolation across Lambda service requests
     - Test permission enforcement in Lambda service calls
@@ -281,7 +281,7 @@ This implementation plan converts the authentication and tenant management desig
     - Implement account lockout and recovery procedures
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ]* 15.3 Write property test for edge case handling
+  - [ ]\* 15.3 Write property test for edge case handling
     - **Property 13: Security under adverse conditions**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
@@ -303,7 +303,7 @@ This implementation plan converts the authentication and tenant management desig
     - Create troubleshooting and monitoring guides for Lambda functions
     - _Requirements: All requirements_
 
-  - [ ]* 16.3 Write comprehensive integration tests for Lambda functions
+  - [ ]\* 16.3 Write comprehensive integration tests for Lambda functions
     - Test complete authentication Lambda function functionality
     - Test client SDK and middleware integration with Lambda functions
     - Test security controls and audit logging in Lambda environment

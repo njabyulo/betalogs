@@ -52,283 +52,332 @@ The architecture enforces security at multiple layers with authentication, autho
 ## Components and Interfaces
 
 ### Authentication Service
+
 **Responsibility**: Core authentication orchestration and BetterAuth integration
 **Interface**:
+
 ```typescript
 interface AuthenticationService {
-  authenticate(credentials: AuthCredentials): Promise<AuthResult>
-  validateSession(sessionToken: string): Promise<SessionValidation>
-  refreshSession(refreshToken: string): Promise<SessionRefresh>
-  logout(sessionToken: string): Promise<LogoutResult>
-  setupMFA(userId: string, method: MFAMethod): Promise<MFASetupResult>
+  authenticate(credentials: AuthCredentials): Promise<AuthResult>;
+  validateSession(sessionToken: string): Promise<SessionValidation>;
+  refreshSession(refreshToken: string): Promise<SessionRefresh>;
+  logout(sessionToken: string): Promise<LogoutResult>;
+  setupMFA(userId: string, method: MFAMethod): Promise<MFASetupResult>;
 }
 
 interface AuthCredentials {
-  type: 'password' | 'saml' | 'oidc' | 'api_key'
-  username?: string
-  password?: string
-  samlResponse?: string
-  oidcToken?: string
-  apiKey?: string
-  mfaToken?: string
-  tenantHint?: string
+  type: "password" | "saml" | "oidc" | "api_key";
+  username?: string;
+  password?: string;
+  samlResponse?: string;
+  oidcToken?: string;
+  apiKey?: string;
+  mfaToken?: string;
+  tenantHint?: string;
 }
 
 interface AuthResult {
-  success: boolean
-  sessionToken?: string
-  refreshToken?: string
-  user?: AuthenticatedUser
-  tenant?: TenantContext
-  requiresMFA?: boolean
-  mfaChallenge?: MFAChallenge
-  error?: AuthError
+  success: boolean;
+  sessionToken?: string;
+  refreshToken?: string;
+  user?: AuthenticatedUser;
+  tenant?: TenantContext;
+  requiresMFA?: boolean;
+  mfaChallenge?: MFAChallenge;
+  error?: AuthError;
 }
 
 interface AuthenticatedUser {
-  userId: string
-  email: string
-  displayName: string
-  roles: UserRole[]
-  permissions: Permission[]
-  tenantId: string
-  lastLoginAt: Date
-  mfaEnabled: boolean
+  userId: string;
+  email: string;
+  displayName: string;
+  roles: UserRole[];
+  permissions: Permission[];
+  tenantId: string;
+  lastLoginAt: Date;
+  mfaEnabled: boolean;
 }
 ```
 
 ### Tenant Resolver
+
 **Responsibility**: Tenant context determination and isolation enforcement
 **Interface**:
+
 ```typescript
 interface TenantResolver {
-  resolveTenant(context: TenantResolutionContext): Promise<TenantContext>
-  validateTenantAccess(userId: string, tenantId: string): Promise<TenantAccessValidation>
-  enforceTenantIsolation(query: DatabaseQuery, tenantId: string): Promise<DatabaseQuery>
-  getTenantConfiguration(tenantId: string): Promise<TenantConfiguration>
+  resolveTenant(context: TenantResolutionContext): Promise<TenantContext>;
+  validateTenantAccess(
+    userId: string,
+    tenantId: string
+  ): Promise<TenantAccessValidation>;
+  enforceTenantIsolation(
+    query: DatabaseQuery,
+    tenantId: string
+  ): Promise<DatabaseQuery>;
+  getTenantConfiguration(tenantId: string): Promise<TenantConfiguration>;
 }
 
 interface TenantContext {
-  tenantId: string
-  tenantName: string
-  domain?: string
-  configuration: TenantConfiguration
-  features: FeatureFlags
-  limits: TenantLimits
-  createdAt: Date
-  status: 'active' | 'suspended' | 'trial'
+  tenantId: string;
+  tenantName: string;
+  domain?: string;
+  configuration: TenantConfiguration;
+  features: FeatureFlags;
+  limits: TenantLimits;
+  createdAt: Date;
+  status: "active" | "suspended" | "trial";
 }
 
 interface TenantConfiguration {
-  authenticationMethods: AuthMethod[]
-  mfaRequired: boolean
-  sessionTimeout: number
-  apiKeySettings: APIKeySettings
-  auditRetention: number
-  customBranding?: BrandingSettings
-  integrations: IntegrationSettings
+  authenticationMethods: AuthMethod[];
+  mfaRequired: boolean;
+  sessionTimeout: number;
+  apiKeySettings: APIKeySettings;
+  auditRetention: number;
+  customBranding?: BrandingSettings;
+  integrations: IntegrationSettings;
 }
 
 interface FeatureFlags {
-  searchEnabled: boolean
-  briefGenerationEnabled: boolean
-  githubIntegrationEnabled: boolean
-  advancedAnalyticsEnabled: boolean
-  customDashboardsEnabled: boolean
+  searchEnabled: boolean;
+  briefGenerationEnabled: boolean;
+  githubIntegrationEnabled: boolean;
+  advancedAnalyticsEnabled: boolean;
+  customDashboardsEnabled: boolean;
 }
 ```
 
 ### RBAC Service
+
 **Responsibility**: Role-based access control and permission management
 **Interface**:
+
 ```typescript
 interface RBACService {
-  checkPermission(userId: string, resource: string, action: string): Promise<PermissionCheck>
-  getUserRoles(userId: string, tenantId: string): Promise<UserRole[]>
-  assignRole(userId: string, roleId: string, tenantId: string): Promise<RoleAssignment>
-  createCustomRole(tenantId: string, roleDefinition: RoleDefinition): Promise<Role>
-  getEffectivePermissions(userId: string, tenantId: string): Promise<Permission[]>
+  checkPermission(
+    userId: string,
+    resource: string,
+    action: string
+  ): Promise<PermissionCheck>;
+  getUserRoles(userId: string, tenantId: string): Promise<UserRole[]>;
+  assignRole(
+    userId: string,
+    roleId: string,
+    tenantId: string
+  ): Promise<RoleAssignment>;
+  createCustomRole(
+    tenantId: string,
+    roleDefinition: RoleDefinition
+  ): Promise<Role>;
+  getEffectivePermissions(
+    userId: string,
+    tenantId: string
+  ): Promise<Permission[]>;
 }
 
 interface Permission {
-  permissionId: string
-  resource: string // 'stories', 'briefs', 'search', 'admin', etc.
-  actions: string[] // 'read', 'write', 'delete', 'admin'
-  conditions?: PermissionCondition[]
-  scope: 'tenant' | 'global'
+  permissionId: string;
+  resource: string; // 'stories', 'briefs', 'search', 'admin', etc.
+  actions: string[]; // 'read', 'write', 'delete', 'admin'
+  conditions?: PermissionCondition[];
+  scope: "tenant" | "global";
 }
 
 interface UserRole {
-  roleId: string
-  roleName: string
-  permissions: Permission[]
-  isCustom: boolean
-  tenantId: string
-  assignedAt: Date
-  assignedBy: string
+  roleId: string;
+  roleName: string;
+  permissions: Permission[];
+  isCustom: boolean;
+  tenantId: string;
+  assignedAt: Date;
+  assignedBy: string;
 }
 
 interface RoleDefinition {
-  name: string
-  description: string
-  permissions: Permission[]
-  isDefault: boolean
-  tenantId: string
+  name: string;
+  description: string;
+  permissions: Permission[];
+  isDefault: boolean;
+  tenantId: string;
 }
 
 // Built-in roles
 type SystemRole =
-  | 'tenant_admin'    // Full tenant management
-  | 'operator'        // Search, stories, briefs
-  | 'analyst'         // Read-only analysis access
-  | 'viewer'          // Basic read-only access
-  | 'api_user'        // Programmatic access only
+  | "tenant_admin" // Full tenant management
+  | "operator" // Search, stories, briefs
+  | "analyst" // Read-only analysis access
+  | "viewer" // Basic read-only access
+  | "api_user"; // Programmatic access only
 ```
 
 ### Session Manager
+
 **Responsibility**: Secure session lifecycle management
 **Interface**:
+
 ```typescript
 interface SessionManager {
-  createSession(user: AuthenticatedUser, options: SessionOptions): Promise<Session>
-  validateSession(sessionToken: string): Promise<SessionValidation>
-  refreshSession(refreshToken: string): Promise<SessionRefresh>
-  revokeSession(sessionToken: string): Promise<void>
-  revokeAllUserSessions(userId: string): Promise<void>
+  createSession(
+    user: AuthenticatedUser,
+    options: SessionOptions
+  ): Promise<Session>;
+  validateSession(sessionToken: string): Promise<SessionValidation>;
+  refreshSession(refreshToken: string): Promise<SessionRefresh>;
+  revokeSession(sessionToken: string): Promise<void>;
+  revokeAllUserSessions(userId: string): Promise<void>;
 }
 
 interface Session {
-  sessionId: string
-  sessionToken: string
-  refreshToken: string
-  userId: string
-  tenantId: string
-  createdAt: Date
-  expiresAt: Date
-  lastAccessedAt: Date
-  ipAddress: string
-  userAgent: string
-  permissions: Permission[]
-  metadata: SessionMetadata
+  sessionId: string;
+  sessionToken: string;
+  refreshToken: string;
+  userId: string;
+  tenantId: string;
+  createdAt: Date;
+  expiresAt: Date;
+  lastAccessedAt: Date;
+  ipAddress: string;
+  userAgent: string;
+  permissions: Permission[];
+  metadata: SessionMetadata;
 }
 
 interface SessionOptions {
-  rememberMe?: boolean
-  ipAddress: string
-  userAgent: string
-  deviceFingerprint?: string
-  extendedTimeout?: boolean
+  rememberMe?: boolean;
+  ipAddress: string;
+  userAgent: string;
+  deviceFingerprint?: string;
+  extendedTimeout?: boolean;
 }
 
 interface SessionValidation {
-  isValid: boolean
-  session?: Session
-  user?: AuthenticatedUser
-  tenant?: TenantContext
-  requiresRefresh?: boolean
-  error?: SessionError
+  isValid: boolean;
+  session?: Session;
+  user?: AuthenticatedUser;
+  tenant?: TenantContext;
+  requiresRefresh?: boolean;
+  error?: SessionError;
 }
 ```
 
 ### API Key Manager
+
 **Responsibility**: Programmatic access token management
 **Interface**:
+
 ```typescript
 interface APIKeyManager {
-  generateAPIKey(request: APIKeyRequest): Promise<APIKey>
-  validateAPIKey(keyValue: string): Promise<APIKeyValidation>
-  rotateAPIKey(keyId: string): Promise<APIKey>
-  revokeAPIKey(keyId: string): Promise<void>
-  listAPIKeys(tenantId: string): Promise<APIKey[]>
+  generateAPIKey(request: APIKeyRequest): Promise<APIKey>;
+  validateAPIKey(keyValue: string): Promise<APIKeyValidation>;
+  rotateAPIKey(keyId: string): Promise<APIKey>;
+  revokeAPIKey(keyId: string): Promise<void>;
+  listAPIKeys(tenantId: string): Promise<APIKey[]>;
 }
 
 interface APIKeyRequest {
-  tenantId: string
-  name: string
-  description?: string
-  permissions: Permission[]
-  expiresAt?: Date
-  ipWhitelist?: string[]
-  rateLimit?: RateLimit
-  createdBy: string
+  tenantId: string;
+  name: string;
+  description?: string;
+  permissions: Permission[];
+  expiresAt?: Date;
+  ipWhitelist?: string[];
+  rateLimit?: RateLimit;
+  createdBy: string;
 }
 
 interface APIKey {
-  keyId: string
-  keyValue: string // Only returned on creation
-  keyHash: string
-  name: string
-  tenantId: string
-  permissions: Permission[]
-  createdAt: Date
-  expiresAt?: Date
-  lastUsedAt?: Date
-  isActive: boolean
-  usage: APIKeyUsage
+  keyId: string;
+  keyValue: string; // Only returned on creation
+  keyHash: string;
+  name: string;
+  tenantId: string;
+  permissions: Permission[];
+  createdAt: Date;
+  expiresAt?: Date;
+  lastUsedAt?: Date;
+  isActive: boolean;
+  usage: APIKeyUsage;
 }
 
 interface APIKeyValidation {
-  isValid: boolean
-  apiKey?: APIKey
-  tenant?: TenantContext
-  effectivePermissions?: Permission[]
-  rateLimitStatus?: RateLimitStatus
-  error?: APIKeyError
+  isValid: boolean;
+  apiKey?: APIKey;
+  tenant?: TenantContext;
+  effectivePermissions?: Permission[];
+  rateLimitStatus?: RateLimitStatus;
+  error?: APIKeyError;
 }
 ```
 
 ### Audit Logger
+
 **Responsibility**: Comprehensive security and compliance logging
 **Interface**:
+
 ```typescript
 interface AuditLogger {
-  logAuthEvent(event: AuthAuditEvent): Promise<void>
-  logAuthzEvent(event: AuthzAuditEvent): Promise<void>
-  logTenantEvent(event: TenantAuditEvent): Promise<void>
-  logSecurityEvent(event: SecurityAuditEvent): Promise<void>
-  queryAuditLogs(query: AuditQuery): Promise<AuditLogResult>
+  logAuthEvent(event: AuthAuditEvent): Promise<void>;
+  logAuthzEvent(event: AuthzAuditEvent): Promise<void>;
+  logTenantEvent(event: TenantAuditEvent): Promise<void>;
+  logSecurityEvent(event: SecurityAuditEvent): Promise<void>;
+  queryAuditLogs(query: AuditQuery): Promise<AuditLogResult>;
 }
 
 interface AuthAuditEvent {
-  eventType: 'login_attempt' | 'login_success' | 'login_failure' | 'logout' | 'session_expired'
-  userId?: string
-  tenantId?: string
-  timestamp: Date
-  ipAddress: string
-  userAgent: string
-  authMethod: string
-  mfaUsed: boolean
-  failureReason?: string
-  metadata: Record<string, any>
+  eventType:
+    | "login_attempt"
+    | "login_success"
+    | "login_failure"
+    | "logout"
+    | "session_expired";
+  userId?: string;
+  tenantId?: string;
+  timestamp: Date;
+  ipAddress: string;
+  userAgent: string;
+  authMethod: string;
+  mfaUsed: boolean;
+  failureReason?: string;
+  metadata: Record<string, any>;
 }
 
 interface AuthzAuditEvent {
-  eventType: 'permission_check' | 'permission_denied' | 'role_assigned' | 'role_revoked'
-  userId: string
-  tenantId: string
-  resource: string
-  action: string
-  decision: 'allow' | 'deny'
-  reasoning: string
-  timestamp: Date
-  metadata: Record<string, any>
+  eventType:
+    | "permission_check"
+    | "permission_denied"
+    | "role_assigned"
+    | "role_revoked";
+  userId: string;
+  tenantId: string;
+  resource: string;
+  action: string;
+  decision: "allow" | "deny";
+  reasoning: string;
+  timestamp: Date;
+  metadata: Record<string, any>;
 }
 
 interface SecurityAuditEvent {
-  eventType: 'tenant_isolation_violation' | 'suspicious_activity' | 'rate_limit_exceeded' | 'security_policy_violation'
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  userId?: string
-  tenantId?: string
-  description: string
-  evidence: Record<string, any>
-  timestamp: Date
-  resolved: boolean
+  eventType:
+    | "tenant_isolation_violation"
+    | "suspicious_activity"
+    | "rate_limit_exceeded"
+    | "security_policy_violation";
+  severity: "low" | "medium" | "high" | "critical";
+  userId?: string;
+  tenantId?: string;
+  description: string;
+  evidence: Record<string, any>;
+  timestamp: Date;
+  resolved: boolean;
 }
 ```
 
 ## Data Models
 
 ### Authentication Schema (PostgreSQL)
+
 ```sql
 -- Tenants table with configuration
 CREATE TABLE tenants (
@@ -513,7 +562,7 @@ CREATE INDEX CONCURRENTLY idx_audit_logs_user_timestamp ON audit_logs (user_id, 
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 Now I need to analyze the acceptance criteria to determine which ones can be tested as properties:
 

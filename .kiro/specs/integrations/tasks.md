@@ -12,7 +12,7 @@ This implementation plan creates a plugin-based integration framework starting w
   - Set up plugin registry and manager foundation
   - _Requirements: 1.1, 1.4, 1.5_
 
-- [ ]* 1.1 Write property test for plugin interface standardization
+- [ ]\* 1.1 Write property test for plugin interface standardization
   - **Property 1: Plugin Interface Standardization**
   - **Validates: Requirements 1.1, 1.2, 8.1, 8.2**
 
@@ -22,7 +22,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Support multiple authentication methods (API keys, OAuth, service accounts)
     - _Requirements: 4.1, 4.2_
 
-  - [ ]* 2.2 Write property test for universal authentication support
+  - [ ]\* 2.2 Write property test for universal authentication support
     - **Property 3: Universal Authentication Support**
     - **Validates: Requirements 2.1, 3.1, 4.1, 4.2, 4.3**
 
@@ -31,7 +31,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Implement validation and error handling for expired credentials
     - _Requirements: 4.3, 4.4_
 
-  - [ ]* 2.4 Write unit tests for credential management edge cases
+  - [ ]\* 2.4 Write unit tests for credential management edge cases
     - Test credential expiration scenarios
     - Test encryption/decryption with various key types
     - _Requirements: 4.2, 4.3, 4.4_
@@ -46,7 +46,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Preserve original data context while adding standardized fields
     - _Requirements: 7.1, 7.2, 7.4_
 
-  - [ ]* 4.2 Write property test for consistent data transformation
+  - [ ]\* 4.2 Write property test for consistent data transformation
     - **Property 4: Consistent Data Transformation**
     - **Validates: Requirements 2.2, 2.3, 3.2, 7.1, 7.2, 7.5**
 
@@ -55,7 +55,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Implement dead letter queue for malformed data
     - _Requirements: 7.3, 7.5_
 
-  - [ ]* 4.4 Write unit tests for data transformation edge cases
+  - [ ]\* 4.4 Write unit tests for data transformation edge cases
     - Test malformed data handling
     - Test various external service schema formats
     - _Requirements: 7.3, 7.5_
@@ -66,7 +66,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Add plugin versioning and dependency management
     - _Requirements: 1.2, 1.3, 8.3, 8.5_
 
-  - [ ]* 5.2 Write property test for plugin lifecycle management
+  - [ ]\* 5.2 Write property test for plugin lifecycle management
     - **Property 6: Plugin Lifecycle Management**
     - **Validates: Requirements 1.5, 6.1, 10.4**
 
@@ -75,7 +75,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Implement feature flags and permission validation
     - _Requirements: 5.1, 5.2, 5.4_
 
-  - [ ]* 5.4 Write property test for configuration management
+  - [ ]\* 5.4 Write property test for configuration management
     - **Property 9: Configuration Management**
     - **Validates: Requirements 5.2, 5.4, 5.5**
 
@@ -93,7 +93,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Transform CloudWatch data to canonical events
     - _Requirements: 2.2, 2.3, 2.4_
 
-  - [ ]* 7.3 Write unit tests for CloudWatch plugin
+  - [ ]\* 7.3 Write unit tests for CloudWatch plugin
     - Test AWS authentication scenarios
     - Test CloudWatch data transformation
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
@@ -115,7 +115,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Implement regression window analysis
     - _Requirements: 3.3_
 
-  - [ ]* 8.4 Write unit tests for GitHub plugin
+  - [ ]\* 8.4 Write unit tests for GitHub plugin
     - Test GitHub authentication and webhook processing
     - Test correlation and evidence link creation
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
@@ -126,7 +126,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Add performance metrics collection (latency, success rates)
     - _Requirements: 6.1, 6.4_
 
-  - [ ]* 9.2 Write property test for health monitoring and performance
+  - [ ]\* 9.2 Write property test for health monitoring and performance
     - **Property 10: Health Monitoring and Performance**
     - **Validates: Requirements 6.1, 6.4, 6.5**
 
@@ -136,7 +136,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Add graceful degradation modes
     - _Requirements: 10.1, 10.2, 10.5_
 
-  - [ ]* 9.4 Write property test for comprehensive error handling
+  - [ ]\* 9.4 Write property test for comprehensive error handling
     - **Property 5: Comprehensive Error Handling**
     - **Validates: Requirements 4.4, 6.2, 7.3, 10.1, 10.2, 10.3, 10.5**
 
@@ -147,7 +147,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Maintain clear source attribution
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-  - [ ]* 10.2 Write property test for event enrichment consistency
+  - [ ]\* 10.2 Write property test for event enrichment consistency
     - **Property 8: Event Enrichment Consistency**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
 
@@ -156,7 +156,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Support various link types (commits, PRs, deployments, metrics)
     - _Requirements: 3.4, 9.4_
 
-  - [ ]* 10.4 Write property test for evidence link creation
+  - [ ]\* 10.4 Write property test for evidence link creation
     - **Property 7: Evidence Link Creation**
     - **Validates: Requirements 3.4, 9.4**
 
@@ -166,7 +166,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Implement tenant-specific configuration and credential storage
     - _Requirements: 5.1, 5.3_
 
-  - [ ]* 11.2 Write property test for comprehensive tenant isolation
+  - [ ]\* 11.2 Write property test for comprehensive tenant isolation
     - **Property 2: Comprehensive Tenant Isolation**
     - **Validates: Requirements 2.5, 3.5, 5.1, 5.3**
 
@@ -175,7 +175,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Implement configuration history and change tracking
     - _Requirements: 4.5, 5.5_
 
-  - [ ]* 11.4 Write unit tests for audit logging
+  - [ ]\* 11.4 Write unit tests for audit logging
     - Test audit log creation for various operations
     - Test configuration history tracking
     - _Requirements: 4.5, 5.5_
@@ -187,7 +187,7 @@ This implementation plan creates a plugin-based integration framework starting w
     - Connect health monitoring to platform monitoring
     - _Requirements: All requirements_
 
-  - [ ]* 12.2 Write integration tests for end-to-end workflows
+  - [ ]\* 12.2 Write integration tests for end-to-end workflows
     - Test complete integration flows from external services to canonical events
     - Test multi-plugin scenarios and tenant boundary testing
     - _Requirements: All requirements_

@@ -20,7 +20,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Handle incomplete or fragmented trace context
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-  - [ ]* 2.2 Write property test for trace-based correlation
+  - [ ]\* 2.2 Write property test for trace-based correlation
     - **Property 1: Trace-Based Correlation Completeness**
     - **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
 
@@ -31,7 +31,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Implement correlation priority ordering (requestId > orderId > sessionId > userId)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ]* 3.2 Write property test for business identifier correlation
+  - [ ]\* 3.2 Write property test for business identifier correlation
     - **Property 2: Business Identifier Correlation Priority**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
@@ -43,7 +43,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Add temporal distance limits to prevent false groupings
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ]* 4.2 Write property test for time-window correlation
+  - [ ]\* 4.2 Write property test for time-window correlation
     - **Property 3: Time-Window Correlation Fallback**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
 
@@ -59,7 +59,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Implement failure point identification and error propagation
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ]* 6.2 Write property test for story timeline construction
+  - [ ]\* 6.2 Write property test for story timeline construction
     - **Property 4: Story Timeline Construction**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
@@ -71,7 +71,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Add correlation metadata explaining grouping methods
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 7.2 Write property test for confidence assignment
+  - [ ]\* 7.2 Write property test for confidence assignment
     - **Property 5: Correlation Confidence Assignment**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
@@ -84,7 +84,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Implement audit trail creation for story operations
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ]* 8.2 Write property test for tenant isolation
+  - [ ]\* 8.2 Write property test for tenant isolation
     - **Property 6: Tenant Isolation Enforcement**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
@@ -96,7 +96,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Add support for both incremental updates and full reconstruction
     - _Requirements: 7.1, 7.2, 7.3, 7.5_
 
-  - [ ]* 9.2 Write property test for real-time processing
+  - [ ]\* 9.2 Write property test for real-time processing
     - **Property 7: Real-Time Story Processing**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.5**
 
@@ -107,7 +107,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Implement performance monitoring and controls
     - _Requirements: 8.4_
 
-  - [ ]* 10.2 Write property test for size management
+  - [ ]\* 10.2 Write property test for size management
     - **Property 8: Story Size Management**
     - **Validates: Requirements 8.4**
 
@@ -125,7 +125,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Provide both summary metadata and full timeline views
     - _Requirements: 9.3, 9.4_
 
-  - [ ]* 11.3 Write property test for storage and retrieval
+  - [ ]\* 11.3 Write property test for storage and retrieval
     - **Property 9: Story Storage and Retrieval**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
 
@@ -138,7 +138,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Add retry mechanisms and graceful degradation for system errors
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ]* 12.2 Write property test for edge case handling
+  - [ ]\* 12.2 Write property test for edge case handling
     - **Property 10: Graceful Edge Case Handling**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
@@ -150,7 +150,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Create unified interface for both real-time and batch operations
     - _Requirements: All requirements (orchestration)_
 
-  - [ ]* 13.2 Write integration tests for story reconstruction
+  - [ ]\* 13.2 Write integration tests for story reconstruction
     - Test end-to-end story reconstruction flows
     - Test complex correlation scenarios with multiple methods
     - Test performance with large event volumes
@@ -170,7 +170,7 @@ This implementation plan converts the story reconstruction design into discrete 
     - Wire integration with Activity Event Processing system
     - _Requirements: All requirements (processing pipeline)_
 
-  - [ ]* 14.3 Write API integration tests
+  - [ ]\* 14.3 Write API integration tests
     - Test story query and retrieval endpoints
     - Test real-time story updates through API
     - Test error handling and edge cases
