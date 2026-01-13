@@ -1,21 +1,23 @@
-import type { z } from 'zod'
-import { createChatRepository } from '../../repositories/chat'
+import type { z } from "zod";
+import { createChatRepository } from "../../repositories/chat";
 import {
   IChatRepository,
   IChatService,
   IChatServiceOptions,
   ICreateChatServiceOptions,
-} from '../interfaces'
+} from "../interfaces";
 
-class ChatService<TSchema extends z.ZodTypeAny> implements IChatService<TSchema> {
-  private chatRepository: IChatRepository<TSchema>
+class ChatService<
+  TSchema extends z.ZodTypeAny,
+> implements IChatService<TSchema> {
+  private chatRepository: IChatRepository<TSchema>;
 
   constructor(options: IChatServiceOptions<TSchema>) {
-    this.chatRepository = options.chatRepository
+    this.chatRepository = options.chatRepository;
   }
 
   async chat(prompt: string): Promise<z.infer<TSchema>> {
-    return await this.chatRepository.chat(prompt)
+    return await this.chatRepository.chat(prompt);
   }
 }
 
@@ -30,9 +32,9 @@ export const createChatService = <TSchema extends z.ZodTypeAny>(
     tools: options.tools,
     activeModelType: options.activeModelType,
     schema: options.schema,
-  })
+  });
 
   return new ChatService<TSchema>({
     chatRepository,
-  })
-}
+  });
+};
