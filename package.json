@@ -5,6 +5,8 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev --filter=!sandbox --filter=!functions",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "lint": "turbo lint",
     "test": "turbo test",
     "type-check": "turbo type-check",
@@ -13,6 +15,7 @@
   },
   "devDependencies": {
     "@turbo/gen": "catalog:",
+    "prettier": "catalog:",
     "turbo": "catalog:",
     "tsup": "catalog:"
   }
