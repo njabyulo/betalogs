@@ -1,1 +1,1 @@
-export type TEnvironment = 'development' | 'staging' | 'production'
+export type TEnvironment = "development" | "staging" | "production";
