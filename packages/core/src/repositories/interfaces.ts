@@ -47,6 +47,7 @@ export interface IChatRepository<TSchema extends z.ZodTypeAny> {
 
 export interface IChatRepositoryOptions<D, T extends ToolSet, TSchema extends z.ZodTypeAny> {
   chatAgent: AgentAdapter<D, T, TSchema>
+  schema: TSchema
 }
 
 export type TChatToolSet = {
