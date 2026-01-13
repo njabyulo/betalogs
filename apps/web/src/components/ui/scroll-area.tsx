@@ -1,5 +1,5 @@
-import * as React from "react"
-import { cn } from "~/lib/utils"
+import * as React from "react";
+import { cn } from "~/lib/utils";
 
 const ScrollArea = React.forwardRef<
   HTMLDivElement,
@@ -14,7 +14,7 @@ const ScrollArea = React.forwardRef<
       {children}
     </div>
   </div>
-))
-ScrollArea.displayName = "ScrollArea"
+));
+ScrollArea.displayName = "ScrollArea";
 
-export { ScrollArea }
+export { ScrollArea };
