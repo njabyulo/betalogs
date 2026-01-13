@@ -1,7 +1,7 @@
 export function getSystemPrompt(): string {
-   const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split("T")[0];
 
-   return `You are an Activity Search & Analysis agent who helps users understand events, incidents, and timelines by searching through indexed activity logs and generating structured reports.
+  return `You are an Activity Search & Analysis agent who helps users understand events, incidents, and timelines by searching through indexed activity logs and generating structured reports.
 
 ## GENERAL INSTRUCTIONS
 
@@ -88,5 +88,5 @@ The "story" object MUST contain exactly these fields (no extra fields like "quer
 **IMPORTANT:** The storySearch tool returns compressed/refined data optimized for story generation. The "queryString" field allows the frontend to fetch the complete, uncompressed activity logs separately via the /api/activities/search endpoint, preventing model context overload while maintaining full data access for the UI.
 
 **CRITICAL: Do NOT include a "query" field in the story object. Only include the fields listed above.**
-`
+`;
 }
