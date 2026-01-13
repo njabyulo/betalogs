@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { ActivityTimeline } from '~/features/story/components/ActivityTimeline'
-import { CommentInput } from '~/features/story/components/CommentInput'
-import { SummaryCard } from '~/features/story/components/SummaryCard'
-import { useStoryChat } from '~/features/story/hooks/useStoryChat'
-import { Card, CardContent } from '~/components/ui/card'
+import { ActivityTimeline } from "~/features/story/components/ActivityTimeline";
+import { CommentInput } from "~/features/story/components/CommentInput";
+import { SummaryCard } from "~/features/story/components/SummaryCard";
+import { useStoryChat } from "~/features/story/hooks/useStoryChat";
+import { Card, CardContent } from "~/components/ui/card";
 
 export default function Home() {
   const {
@@ -16,16 +16,16 @@ export default function Home() {
     isLoadingFullLogs,
     fetchFullLogs,
     cacheStatus,
-  } = useStoryChat()
+  } = useStoryChat();
 
   const handleLoadFullLogs = () => {
     if (storySummary?.queryString) {
-      fetchFullLogs(storySummary.queryString)
+      fetchFullLogs(storySummary.queryString);
     }
-  }
+  };
 
   // Use full logs if available, otherwise use compressed events
-  const displayEvents = fullLogs.length > 0 ? fullLogs : events
+  const displayEvents = fullLogs.length > 0 ? fullLogs : events;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -58,5 +58,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }
