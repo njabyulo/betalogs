@@ -1,45 +1,57 @@
-'use client'
+"use client";
 
-import { memo } from 'react'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
-import { Button } from '~/components/ui/button'
-import { FaPlus, FaFileAlt, FaEnvelope, FaComment, FaSync, FaTimes, FaStar, FaAt } from 'react-icons/fa'
+import { memo } from "react";
+import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import {
+  FaPlus,
+  FaFileAlt,
+  FaEnvelope,
+  FaComment,
+  FaSync,
+  FaTimes,
+  FaStar,
+  FaAt,
+} from "react-icons/fa";
 import {
   Sources,
   SourcesTrigger,
   SourcesContent,
   Source,
-} from '~/features/story/components/Sources'
-import { useEventItem } from '~/features/story/hooks/useEventItem'
-import type { IEventItemProps, TActivityEventType } from '~/features/story/types'
+} from "~/features/story/components/Sources";
+import { useEventItem } from "~/features/story/hooks/useEventItem";
+import type {
+  IEventItemProps,
+  TActivityEventType,
+} from "~/features/story/types";
 
 const getEventIcon = (type: TActivityEventType) => {
   switch (type) {
-    case 'file':
-      return <FaPlus className="h-4 w-4" />
-    case 'meeting':
-      return <FaFileAlt className="h-4 w-4" />
-    case 'comment':
-      return <FaEnvelope className="h-4 w-4" />
-    case 'mention':
-      return <FaComment className="h-4 w-4" />
-    case 'rule':
-      return <FaSync className="h-4 w-4" />
-    case 'tag':
-      return <FaPlus className="h-4 w-4" />
-    case 'assignment':
-      return <FaTimes className="h-4 w-4" />
-    case 'creation':
-      return <FaStar className="h-4 w-4" />
-    case 'email':
-      return <FaAt className="h-4 w-4" />
+    case "file":
+      return <FaPlus className="h-4 w-4" />;
+    case "meeting":
+      return <FaFileAlt className="h-4 w-4" />;
+    case "comment":
+      return <FaEnvelope className="h-4 w-4" />;
+    case "mention":
+      return <FaComment className="h-4 w-4" />;
+    case "rule":
+      return <FaSync className="h-4 w-4" />;
+    case "tag":
+      return <FaPlus className="h-4 w-4" />;
+    case "assignment":
+      return <FaTimes className="h-4 w-4" />;
+    case "creation":
+      return <FaStar className="h-4 w-4" />;
+    case "email":
+      return <FaAt className="h-4 w-4" />;
     default:
-      return null
+      return null;
   }
-}
+};
 
 function EventItemComponent({ event, isLast }: IEventItemProps) {
-  const { timeAgo, citations } = useEventItem({ event })
+  const { timeAgo, citations } = useEventItem({ event });
 
   return (
     <div className="relative flex gap-4 pb-6">
@@ -93,21 +105,16 @@ function EventItemComponent({ event, isLast }: IEventItemProps) {
         )}
 
         {event.threadCount !== undefined && event.threadCount > 0 && (
-          <Button
-            variant="link"
-            className="h-auto p-0 text-xs text-blue-600"
-          >
-            View {event.threadCount} more {event.threadCount === 1 ? 'reply' : 'replies'}
+          <Button variant="link" className="h-auto p-0 text-xs text-blue-600">
+            View {event.threadCount} more{" "}
+            {event.threadCount === 1 ? "reply" : "replies"}
           </Button>
         )}
 
         {event.email && (
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <span>Add to this activity by mailing to {event.email}</span>
-            <Button
-              variant="link"
-              className="h-auto p-0 text-blue-600"
-            >
+            <Button variant="link" className="h-auto p-0 text-blue-600">
               Copy
             </Button>
           </div>
@@ -127,7 +134,7 @@ function EventItemComponent({ event, isLast }: IEventItemProps) {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export const EventItem = memo(EventItemComponent)
+export const EventItem = memo(EventItemComponent);

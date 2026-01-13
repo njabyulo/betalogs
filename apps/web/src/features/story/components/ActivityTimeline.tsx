@@ -1,13 +1,13 @@
-'use client'
+"use client";
 
-import { memo } from 'react'
-import { ScrollArea } from '~/components/ui/scroll-area'
-import { Separator } from '~/components/ui/separator'
-import { CardHeader, CardTitle, CardContent } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { EventItem } from '~/features/story/components/EventItem'
-import type { IActivityTimelineProps } from '~/features/story/types'
-import { Loader2 } from 'lucide-react'
+import { memo } from "react";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import { Separator } from "~/components/ui/separator";
+import { CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { EventItem } from "~/features/story/components/EventItem";
+import type { IActivityTimelineProps } from "~/features/story/types";
+import { Loader2 } from "lucide-react";
 
 function ActivityTimelineComponent({
   events,
@@ -18,7 +18,7 @@ function ActivityTimelineComponent({
   hasFullLogs = false,
 }: IActivityTimelineProps) {
   const showLoadButton =
-    storySummary?.queryString && !hasFullLogs && events.length > 0
+    storySummary?.queryString && !hasFullLogs && events.length > 0;
 
   return (
     <div className="space-y-4">
@@ -39,16 +39,16 @@ function ActivityTimelineComponent({
                   Loading...
                 </>
               ) : (
-                'Load Full Logs'
+                "Load Full Logs"
               )}
             </Button>
           )}
           {hasFullLogs && cacheStatus && (
             <div className="text-xs text-gray-500 flex items-center gap-1">
-              {cacheStatus === 'cached' && (
+              {cacheStatus === "cached" && (
                 <span className="text-blue-600">(Cached)</span>
               )}
-              {cacheStatus === 'fresh' && (
+              {cacheStatus === "fresh" && (
                 <span className="text-green-600">(Fresh)</span>
               )}
             </div>
@@ -85,7 +85,7 @@ function ActivityTimelineComponent({
         </ScrollArea>
       </CardContent>
     </div>
-  )
+  );
 }
 
-export const ActivityTimeline = memo(ActivityTimelineComponent)
+export const ActivityTimeline = memo(ActivityTimelineComponent);

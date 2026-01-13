@@ -1,18 +1,12 @@
-'use client'
+"use client";
 
-import { memo } from 'react'
-import { Button } from '~/components/ui/button'
-import { Textarea } from '~/components/ui/textarea'
-import {
-  Sparkles,
-  Send,
-  Loader2,
-  Paperclip,
-  Mic,
-} from 'lucide-react'
-import { cn } from '~/lib/utils'
-import { useCommentInput } from '~/features/story/hooks/useCommentInput'
-import type { ICommentInputProps } from '~/features/story/types'
+import { memo } from "react";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { Sparkles, Send, Loader2, Paperclip, Mic } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { useCommentInput } from "~/features/story/hooks/useCommentInput";
+import type { ICommentInputProps } from "~/features/story/types";
 
 function CommentInputComponent({
   onSubmit,
@@ -29,16 +23,16 @@ function CommentInputComponent({
     handleChange,
     handleSubmit,
     handleAttachment,
-  } = useCommentInput({ onSubmit, isLoading })
+  } = useCommentInput({ onSubmit, isLoading });
 
-  const displayIcon = icon || <Sparkles className="h-4 w-4" />
+  const displayIcon = icon || <Sparkles className="h-4 w-4" />;
 
   return (
     <form
       ref={containerRef}
       onSubmit={handleSubmit}
       className={cn(
-        'divide-y overflow-hidden rounded-xl border bg-background shadow-lg'
+        "divide-y overflow-hidden rounded-xl border bg-background shadow-lg"
       )}
     >
       <div className="flex items-end gap-2 p-2">
@@ -53,12 +47,12 @@ function CommentInputComponent({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className={cn(
-            'flex-1 resize-none border-none bg-transparent shadow-none',
-            'min-h-[48px] max-h-[164px] overflow-y-auto',
-            'field-sizing-content'
+            "flex-1 resize-none border-none bg-transparent shadow-none",
+            "min-h-[48px] max-h-[164px] overflow-y-auto",
+            "field-sizing-content"
           )}
           style={{
-            height: '48px',
+            height: "48px",
           }}
           autoFocus
           disabled={isLoading}
@@ -68,9 +62,9 @@ function CommentInputComponent({
           size="icon"
           variant="default"
           className={cn(
-            'h-8 w-8 shrink-0 rounded-lg',
-            'bg-primary hover:bg-primary/90 text-primary-foreground',
-            (!message.trim() || isLoading) && 'opacity-50 cursor-not-allowed'
+            "h-8 w-8 shrink-0 rounded-lg",
+            "bg-primary hover:bg-primary/90 text-primary-foreground",
+            (!message.trim() || isLoading) && "opacity-50 cursor-not-allowed"
           )}
           disabled={!message.trim() || isLoading}
         >
@@ -96,8 +90,8 @@ function CommentInputComponent({
             variant="ghost"
             size="icon"
             className={cn(
-              'h-7 w-7 shrink-0 rounded-lg text-muted-foreground hover:text-foreground',
-              '[&:first-child]:rounded-bl-xl'
+              "h-7 w-7 shrink-0 rounded-lg text-muted-foreground hover:text-foreground",
+              "[&:first-child]:rounded-bl-xl"
             )}
             onClick={handleAttachment}
             title="Attach file"
@@ -109,7 +103,7 @@ function CommentInputComponent({
             variant="ghost"
             size="icon"
             className={cn(
-              'h-7 w-7 shrink-0 rounded-lg text-muted-foreground hover:text-foreground'
+              "h-7 w-7 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
             )}
             title="Voice input"
           >
@@ -118,7 +112,7 @@ function CommentInputComponent({
         </div>
       </div>
     </form>
-  )
+  );
 }
 
-export const CommentInput = memo(CommentInputComponent)
+export const CommentInput = memo(CommentInputComponent);

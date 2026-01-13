@@ -1,32 +1,32 @@
-'use client'
+"use client";
 
-import { BookIcon, ChevronDownIcon } from 'lucide-react'
-import { memo } from 'react'
+import { BookIcon, ChevronDownIcon } from "lucide-react";
+import { memo } from "react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '~/components/ui/collapsible'
+} from "~/components/ui/collapsible";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '~/components/ui/tooltip'
-import { cn } from '~/lib/utils'
-import { useSource } from '~/features/story/hooks/useSource'
+} from "~/components/ui/tooltip";
+import { cn } from "~/lib/utils";
+import { useSource } from "~/features/story/hooks/useSource";
 import type {
   TSourcesProps,
   TSourcesTriggerProps,
   TSourcesContentProps,
   TSourceProps,
-} from '~/features/story/types'
+} from "~/features/story/types";
 
 export const Sources = ({ className, ...props }: TSourcesProps) => (
   <Collapsible
-    className={cn('not-prose mb-4 text-primary text-xs', className)}
+    className={cn("not-prose mb-4 text-primary text-xs", className)}
     {...props}
   />
-)
+);
 
 export const SourcesTrigger = ({
   className,
@@ -35,19 +35,19 @@ export const SourcesTrigger = ({
   ...props
 }: TSourcesTriggerProps) => (
   <CollapsibleTrigger
-    className={cn('flex items-center gap-2', className)}
+    className={cn("flex items-center gap-2", className)}
     {...props}
   >
     {children ?? (
       <>
         <p className="font-medium">
-          Used {count} source{count !== 1 ? 's' : ''}
+          Used {count} source{count !== 1 ? "s" : ""}
         </p>
         <ChevronDownIcon className="h-4 w-4" />
       </>
     )}
   </CollapsibleTrigger>
-)
+);
 
 export const SourcesContent = ({
   className,
@@ -55,13 +55,13 @@ export const SourcesContent = ({
 }: TSourcesContentProps) => (
   <CollapsibleContent
     className={cn(
-      'mt-3 flex w-fit flex-col gap-2',
-      'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 outline-none data-[state=closed]:animate-out data-[state=open]:animate-in',
+      "mt-3 flex w-fit flex-col gap-2",
+      "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
       className
     )}
     {...props}
   />
-)
+);
 
 const SourceComponent = ({
   citation,
@@ -75,11 +75,11 @@ const SourceComponent = ({
     citation,
     href,
     title,
-  })
+  });
 
   return (
     <a
-      className={cn('flex items-center gap-2', className)}
+      className={cn("flex items-center gap-2", className)}
       href={linkHref}
       rel="noreferrer"
       target="_blank"
@@ -102,7 +102,7 @@ const SourceComponent = ({
         </>
       )}
     </a>
-  )
-}
+  );
+};
 
-export const Source = memo(SourceComponent)
+export const Source = memo(SourceComponent);
