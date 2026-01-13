@@ -1,2 +1,2 @@
-export * from './indexing'
-export * from './metadata-registry'
+export * from "./indexing";
+export * from "./metadata-registry";

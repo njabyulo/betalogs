@@ -49,9 +49,11 @@ const parseStructuredOutput = <TSchema extends z.ZodTypeAny>(
   return parsedResult.data;
 };
 
-export class ChatRepository<D, T extends ToolSet, TSchema extends z.ZodTypeAny>
-  implements IChatRepository<TSchema>
-{
+export class ChatRepository<
+  D,
+  T extends ToolSet,
+  TSchema extends z.ZodTypeAny,
+> implements IChatRepository<TSchema> {
   private chatAgent: AgentAdapter<D, T, TSchema>;
   private schema: TSchema;
 
@@ -77,9 +79,7 @@ export class ChatRepository<D, T extends ToolSet, TSchema extends z.ZodTypeAny>
         throw error;
       }
       const message = error instanceof Error ? error.message : String(error);
-      throw new ChatOutputParseError(
-        `Failed to parse chat output: ${message}`
-      );
+      throw new ChatOutputParseError(`Failed to parse chat output: ${message}`);
     }
   }
 }

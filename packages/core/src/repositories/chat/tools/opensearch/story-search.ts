@@ -72,12 +72,12 @@ export const createStorySearchTool = (
       identifier: z
         .string()
         .describe(
-          "The identifier value to search for (e.g., \"order_ord123\", \"req_abc456\", \"alice@example.com\")"
+          'The identifier value to search for (e.g., "order_ord123", "req_abc456", "alice@example.com")'
         ),
       identifierType: z
         .string()
         .describe(
-          "The type of identifier being searched (e.g., \"orderId\", \"requestId\", \"email\", etc.)"
+          'The type of identifier being searched (e.g., "orderId", "requestId", "email", etc.)'
         ),
     }),
     execute: async ({ identifier, identifierType }) => {
@@ -122,15 +122,21 @@ export const createStorySearchTool = (
       const { patterns, unique } = compressByPattern(events);
       const selectedEvents = selectRepresentativeEvents(events);
 
-      const levelDistribution = events.reduce((accumulator, event) => {
-        accumulator[event.level] = (accumulator[event.level] || 0) + 1;
-        return accumulator;
-      }, {} as Record<string, number>);
+      const levelDistribution = events.reduce(
+        (accumulator, event) => {
+          accumulator[event.level] = (accumulator[event.level] || 0) + 1;
+          return accumulator;
+        },
+        {} as Record<string, number>
+      );
 
-      const serviceDistribution = events.reduce((accumulator, event) => {
-        accumulator[event.service] = (accumulator[event.service] || 0) + 1;
-        return accumulator;
-      }, {} as Record<string, number>);
+      const serviceDistribution = events.reduce(
+        (accumulator, event) => {
+          accumulator[event.service] = (accumulator[event.service] || 0) + 1;
+          return accumulator;
+        },
+        {} as Record<string, number>
+      );
 
       const criticalCount = events.filter(
         (event) =>

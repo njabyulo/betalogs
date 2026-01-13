@@ -4,41 +4,41 @@ import {
   ISearchAdapter,
   ISearchAdapterKnnSearchArgs,
   ISearchAdapterKnnSearchResult,
-} from '../../adapters'
+} from "../../adapters";
 import {
   ICreateIndexingRepositoryOptions,
   IIndexingRepositoryOptions,
-} from '../interfaces'
+} from "../interfaces";
 
 export class IndexingRepository {
-  private searchAdapter: ISearchAdapter
+  private searchAdapter: ISearchAdapter;
   constructor(options: IIndexingRepositoryOptions) {
-    this.searchAdapter = options.searchAdapter
+    this.searchAdapter = options.searchAdapter;
   }
 
   async ensureIndex(): Promise<void> {
-    return await this.searchAdapter.ensureIndex()
+    return await this.searchAdapter.ensureIndex();
   }
 
   async ensureIndexTemplate(): Promise<void> {
-    return await this.searchAdapter.ensureIndexTemplate()
+    return await this.searchAdapter.ensureIndexTemplate();
   }
 
   async clearIndex(): Promise<void> {
-    return await this.searchAdapter.clearIndex()
+    return await this.searchAdapter.clearIndex();
   }
 
   async indexActivityEvents(
     documents: IActivityEventDocument[],
     indexName: string
   ): Promise<void> {
-    return await this.searchAdapter.indexActivityEvents(documents, indexName)
+    return await this.searchAdapter.indexActivityEvents(documents, indexName);
   }
 
   async knnSearch(
     args: ISearchAdapterKnnSearchArgs
   ): Promise<ISearchAdapterKnnSearchResult[]> {
-    return await this.searchAdapter.knnSearch(args)
+    return await this.searchAdapter.knnSearch(args);
   }
 }
 
@@ -57,8 +57,8 @@ export const createIndexingRepository = (
       username: options.opensearch.username,
       password: options.opensearch.password,
     },
-  })
+  });
   return new IndexingRepository({
     searchAdapter,
-  })
-}
+  });
+};

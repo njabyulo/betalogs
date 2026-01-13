@@ -30,7 +30,10 @@ const extractPattern = (message: string): string => {
     .replace(/\b[0-9a-f]{32,}\b/gi, "<hash>")
     .replace(/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/g, "<timestamp>")
     .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, "<email>")
-    .replace(/\b(ord_|req_|ship_|ticket_|trace_|checkout_|user_)[a-z0-9_]+\b/gi, "<id>")
+    .replace(
+      /\b(ord_|req_|ship_|ticket_|trace_|checkout_|user_)[a-z0-9_]+\b/gi,
+      "<id>"
+    )
     .replace(/\b\d+\.\d+\.\d+\.\d+\b/g, "<ip>")
     .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, "<ip>")
     .replace(/\b\d+\b/g, "<number>");
