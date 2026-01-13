@@ -1,29 +1,29 @@
-import { google } from '@ai-sdk/google'
-import { generateText, LanguageModel } from 'ai'
+import { google } from "@ai-sdk/google";
+import { generateText, LanguageModel } from "ai";
 import {
   ICreateTextAdapterOptions,
   ITextAdapterGenerateTextArgs,
   ITextAdapterOptions,
-} from '../interfaces'
+} from "../interfaces";
 
 export class TextAdapter {
-  private provider: ITextAdapterOptions['provider']
-  private model: ITextAdapterOptions['model']
+  private provider: ITextAdapterOptions["provider"];
+  private model: ITextAdapterOptions["model"];
 
   constructor(options: ITextAdapterOptions) {
-    this.provider = options.provider
-    this.model = options.model
+    this.provider = options.provider;
+    this.model = options.model;
   }
 
   private getModel(
-    provider: ITextAdapterOptions['provider'],
-    type: keyof ITextAdapterOptions['model']
+    provider: ITextAdapterOptions["provider"],
+    type: keyof ITextAdapterOptions["model"]
   ): LanguageModel {
-    if (provider === 'google') {
-      return google(this.model[type])
+    if (provider === "google") {
+      return google(this.model[type]);
     }
 
-    throw new Error(`Unsupported provider: ${provider}`)
+    throw new Error(`Unsupported provider: ${provider}`);
   }
 
   async generateText(input: ITextAdapterGenerateTextArgs): Promise<string> {
@@ -31,12 +31,12 @@ export class TextAdapter {
       model: this.getModel(this.provider, input.type),
       system: input.system,
       prompt: input.prompt,
-    })
+    });
 
-    return text
+    return text;
   }
 }
 
 export const createTextAdapter = (options: ICreateTextAdapterOptions) => {
-  return new TextAdapter(options)
-}
+  return new TextAdapter(options);
+};

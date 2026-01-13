@@ -1,63 +1,63 @@
-import type { Embedding, ToolLoopAgentSettings, ToolSet } from 'ai'
-import type { z } from 'zod'
-import type { TMetadataRegistryEntry } from '@betalogs/shared/types'
+import type { Embedding, ToolLoopAgentSettings, ToolSet } from "ai";
+import type { z } from "zod";
+import type { TMetadataRegistryEntry } from "@betalogs/shared/types";
 
 export interface ISearchEmbeddingModelArgs {
-  provider: 'google'
-  model: 'gemini-embedding-001'
-  dimension: 3072 | 768
+  provider: "google";
+  model: "gemini-embedding-001";
+  dimension: 3072 | 768;
 }
 
 export interface IEmbeddingAdapterConfig {
   options: {
-    provider: 'google'
+    provider: "google";
     model: {
       low: {
-        model: 'gemini-embedding-001'
-        dimension: 768
-      }
+        model: "gemini-embedding-001";
+        dimension: 768;
+      };
       medium: {
-        model: 'gemini-embedding-001'
-        dimension: 3072
-      }
+        model: "gemini-embedding-001";
+        dimension: 3072;
+      };
       high: {
-        model: 'gemini-embedding-001'
-        dimension: 3072
-      }
-    }
-  }
+        model: "gemini-embedding-001";
+        dimension: 3072;
+      };
+    };
+  };
 }
-export interface ICreateEmbeddingAdapterOptions
-  extends IEmbeddingAdapterConfig { }
+export interface ICreateEmbeddingAdapterOptions extends IEmbeddingAdapterConfig {}
 export interface IEmbeddingAdapterEmbedArgs {
-  value: string
-  type: keyof IEmbeddingAdapterConfig['options']['model']
+  value: string;
+  type: keyof IEmbeddingAdapterConfig["options"]["model"];
 }
 export interface IEmbeddingAdapterEmbedManyArgs {
-  chunks: string[]
-  type: keyof IEmbeddingAdapterConfig['options']['model']
+  chunks: string[];
+  type: keyof IEmbeddingAdapterConfig["options"]["model"];
 }
 
 export interface IEmbeddingAdapter {
-  getEmbeddingDimension(type: 'low' | 'medium' | 'high'): 768 | 3072
-  embed(input: IEmbeddingAdapterEmbedArgs): Promise<Embedding>
-  embedMany(input: IEmbeddingAdapterEmbedManyArgs): Promise<Embedding[]>
+  getEmbeddingDimension(type: "low" | "medium" | "high"): 768 | 3072;
+  embed(input: IEmbeddingAdapterEmbedArgs): Promise<Embedding>;
+  embedMany(input: IEmbeddingAdapterEmbedManyArgs): Promise<Embedding[]>;
 }
 
-export type TSearchModelType = keyof IEmbeddingAdapterConfig['options']['model']
+export type TSearchModelType =
+  keyof IEmbeddingAdapterConfig["options"]["model"];
 
 export interface IFieldMappingConventions {
-  snakeCase?: boolean      // orderId -> order_id
-  camelCase?: boolean     // orderId -> orderId
-  kebabCase?: boolean     // orderId -> order-id
-  pascalCase?: boolean    // orderId -> OrderId
-  metadataPaths?: string[] // e.g., ['metadata', 'context', 'attributes']
-  objectPaths?: string[]   // e.g., ['object', 'correlation', 'actor'] - nested object paths for ActivityEvents
+  snakeCase?: boolean; // orderId -> order_id
+  camelCase?: boolean; // orderId -> orderId
+  kebabCase?: boolean; // orderId -> order-id
+  pascalCase?: boolean; // orderId -> OrderId
+  metadataPaths?: string[]; // e.g., ['metadata', 'context', 'attributes']
+  objectPaths?: string[]; // e.g., ['object', 'correlation', 'actor'] - nested object paths for ActivityEvents
 }
 
 export interface IFieldMappingConfig {
-  explicit?: Record<string, string[]>  // Custom mappings per identifier type
-  conventions?: IFieldMappingConventions
+  explicit?: Record<string, string[]>; // Custom mappings per identifier type
+  conventions?: IFieldMappingConventions;
 }
 
 /**
@@ -65,167 +65,175 @@ export interface IFieldMappingConfig {
  * Adapters depend on this port, not on services directly
  */
 export interface IMetadataRegistryLookupPort {
-  getRegistryForTenant(tenantId: string): Promise<Map<string, TMetadataRegistryEntry>>
+  getRegistryForTenant(
+    tenantId: string
+  ): Promise<Map<string, TMetadataRegistryEntry>>;
 }
 
 export interface ISearchAdapterOptions {
-  embeddingAdapter: IEmbeddingAdapter
-  modelType: TSearchModelType
+  embeddingAdapter: IEmbeddingAdapter;
+  modelType: TSearchModelType;
   opensearch: {
-    node: string
-    index: string
-    username?: string
-    password?: string
-  }
-  fieldMapping?: IFieldMappingConfig
-  metadataRegistryLookup?: IMetadataRegistryLookupPort
+    node: string;
+    index: string;
+    username?: string;
+    password?: string;
+  };
+  fieldMapping?: IFieldMappingConfig;
+  metadataRegistryLookup?: IMetadataRegistryLookupPort;
 }
 
 export interface ICreateSearchAdapterOptions {
-  embedding: ISearchEmbeddingModelArgs
+  embedding: ISearchEmbeddingModelArgs;
   opensearch: {
-    node: string
-    index: string
-    username?: string
-    password?: string
-  }
-  fieldMapping?: IFieldMappingConfig
+    node: string;
+    index: string;
+    username?: string;
+    password?: string;
+  };
+  fieldMapping?: IFieldMappingConfig;
 }
 
 export interface ISearchAdapterDocChunk {
-  id: string
-  timestamp: string
-  level: string
-  service: string
-  message: string
-  metadata?: Record<string, unknown>
-  tenantId?: string
+  id: string;
+  timestamp: string;
+  level: string;
+  service: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+  tenantId?: string;
 }
 
 export interface ISearchAdapterKnnSearchArgs {
-  query: string
-  k?: number
-  filter?: Record<string, unknown>
+  query: string;
+  k?: number;
+  filter?: Record<string, unknown>;
 }
 
 export interface ISearchAdapterKnnSearchResult {
-  id: string
-  score: number
-  text: string
-  metadata: Record<string, unknown>
+  id: string;
+  score: number;
+  text: string;
+  metadata: Record<string, unknown>;
 }
 
 export interface ISearchAdapterExactSearchArgs {
-  identifier: string
-  identifierType: string
+  identifier: string;
+  identifierType: string;
 }
 
 export interface ISearchAdapterExactSearchResult {
-  id: string
-  timestamp: string
-  level: string
-  service: string
-  message: string
-  metadata: Record<string, unknown>
+  id: string;
+  timestamp: string;
+  level: string;
+  service: string;
+  message: string;
+  metadata: Record<string, unknown>;
 }
 
 export interface IActivityEventDocument {
-  eventId: string
-  tenantId: string
-  occurredAt: string
-  category: string
-  action: string
-  outcome: string
-  source: string
-  schemaVersion: string
-  title?: string
-  summary?: string
-  message?: string
+  eventId: string;
+  tenantId: string;
+  occurredAt: string;
+  category: string;
+  action: string;
+  outcome: string;
+  source: string;
+  schemaVersion: string;
+  title?: string;
+  summary?: string;
+  message?: string;
   actor?: {
-    userId?: string
-    emailHash?: string
-    serviceName?: string
-    role?: string
-  }
+    userId?: string;
+    emailHash?: string;
+    serviceName?: string;
+    role?: string;
+  };
   object?: {
-    orderId?: string
-    requestId?: string
-    sessionId?: string
-    ticketId?: string
-    resourceId?: string
-  }
+    orderId?: string;
+    requestId?: string;
+    sessionId?: string;
+    ticketId?: string;
+    resourceId?: string;
+  };
   correlation?: {
-    traceId?: string
-    spanId?: string
-    correlationId?: string
-    parentEventId?: string
-  }
-  metadata?: Record<string, unknown>
-  embedding: number[]
+    traceId?: string;
+    spanId?: string;
+    correlationId?: string;
+    parentEventId?: string;
+  };
+  metadata?: Record<string, unknown>;
+  embedding: number[];
 }
 
 export interface ISearchAdapter {
-  ensureIndex(): Promise<void>
-  ensureIndexTemplate(): Promise<void>
-  clearIndex(): Promise<void>
+  ensureIndex(): Promise<void>;
+  ensureIndexTemplate(): Promise<void>;
+  clearIndex(): Promise<void>;
   indexActivityEvents(
     documents: IActivityEventDocument[],
     indexName: string
-  ): Promise<void>
+  ): Promise<void>;
   knnSearch(
     args: ISearchAdapterKnnSearchArgs
-  ): Promise<ISearchAdapterKnnSearchResult[]>
+  ): Promise<ISearchAdapterKnnSearchResult[]>;
   exactSearch(
     args: ISearchAdapterExactSearchArgs
-  ): Promise<ISearchAdapterExactSearchResult[]>
+  ): Promise<ISearchAdapterExactSearchResult[]>;
 }
 
 export interface ITextAdapterOptions {
-  provider: 'google'
+  provider: "google";
   model: {
-    low: 'gemini-2.5-flash-lite'
-    medium: 'gemini-2.5-flash'
-    high: 'gemini-2.5-flash-pro'
-  }
+    low: "gemini-2.5-flash-lite";
+    medium: "gemini-2.5-flash";
+    high: "gemini-2.5-flash-pro";
+  };
 }
-export interface ICreateTextAdapterOptions extends ITextAdapterOptions { }
+export interface ICreateTextAdapterOptions extends ITextAdapterOptions {}
 export interface ITextAdapterGenerateTextArgs {
-  prompt: string
-  system?: string
-  type: keyof ITextAdapterOptions['model']
+  prompt: string;
+  system?: string;
+  type: keyof ITextAdapterOptions["model"];
 }
 
-export interface IAgentAdapterOptions<D, T>
-  extends Omit<ToolLoopAgentSettings<never, any, never>, 'model' | 'output'> {
-  provider: 'google'
+export interface IAgentAdapterOptions<D, T> extends Omit<
+  ToolLoopAgentSettings<never, any, never>,
+  "model" | "output"
+> {
+  provider: "google";
   model: {
-    low: 'gemini-2.5-flash-lite'
-    medium: 'gemini-2.5-flash'
-    high: 'gemini-2.5-flash-pro'
-  }
-  tools: ToolSet
-  activeModelType: keyof IAgentAdapterOptions<D, T>['model']
+    low: "gemini-2.5-flash-lite";
+    medium: "gemini-2.5-flash";
+    high: "gemini-2.5-flash-pro";
+  };
+  tools: ToolSet;
+  activeModelType: keyof IAgentAdapterOptions<D, T>["model"];
   output?: {
-    schema: z.ZodTypeAny
-  }
+    schema: z.ZodTypeAny;
+  };
 }
-export interface ICreateAgentAdapterOptions<D, T>
-  extends IAgentAdapterOptions<D, T> { }
+export interface ICreateAgentAdapterOptions<D, T> extends IAgentAdapterOptions<
+  D,
+  T
+> {}
 export type TAgentAdapterModelOptions<D, T> = IAgentAdapterOptions<
   D,
   T
->['model']
+>["model"];
 export type TAgentAdapterModelType<D, T> = keyof IAgentAdapterOptions<
   D,
   T
->['model']
+>["model"];
 export interface IAgentAdapterGenerateTextArgs<D, T> {
-  prompt: string
-  system?: string
-  type: keyof IAgentAdapterOptions<D, T>['model']
+  prompt: string;
+  system?: string;
+  type: keyof IAgentAdapterOptions<D, T>["model"];
 }
 
-export interface IAgentAdapterGenerateTextResult<TSchema extends z.ZodTypeAny | undefined> {
-  text: string
-  output?: TSchema extends z.ZodTypeAny ? z.infer<TSchema> : never
+export interface IAgentAdapterGenerateTextResult<
+  TSchema extends z.ZodTypeAny | undefined,
+> {
+  text: string;
+  output?: TSchema extends z.ZodTypeAny ? z.infer<TSchema> : never;
 }

@@ -1,9 +1,9 @@
-import { Client } from '@opensearch-project/opensearch'
+import { Client } from "@opensearch-project/opensearch";
 import {
   Bulk_RequestBody,
   Search_RequestBody,
-} from '@opensearch-project/opensearch/api/index.js'
-import { createEmbeddingAdapter } from '../ai-sdk'
+} from "@opensearch-project/opensearch/api/index.js";
+import { createEmbeddingAdapter } from "../ai-sdk";
 import {
   IActivityEventDocument,
   ICreateSearchAdapterOptions,
@@ -14,51 +14,55 @@ import {
   ISearchAdapterKnnSearchResult,
   ISearchAdapterOptions,
   TSearchModelType,
-} from '../interfaces'
-import type { MatchQuery, QueryContainer, TermQuery } from '@opensearch-project/opensearch/api/_types/_common.query_dsl.js'
-import type { FieldValue } from '@opensearch-project/opensearch/api/_types/_common.js'
+} from "../interfaces";
+import type {
+  MatchQuery,
+  QueryContainer,
+  TermQuery,
+} from "@opensearch-project/opensearch/api/_types/_common.query_dsl.js";
+import type { FieldValue } from "@opensearch-project/opensearch/api/_types/_common.js";
 import type {
   ISearchAdapterExactSearchArgs,
   ISearchAdapterExactSearchResult,
-} from '../interfaces'
-import type { TMetadataRegistryEntry } from '@betalogs/shared/types'
-import { ActivityIndexDimensionMismatchError } from '../../domain/activity/ActivityIndexError'
+} from "../interfaces";
+import type { TMetadataRegistryEntry } from "@betalogs/shared/types";
+import { ActivityIndexDimensionMismatchError } from "../../domain/activity/ActivityIndexError";
 
 interface ICacheEntry {
-  registry: Map<string, TMetadataRegistryEntry>
-  timestamp: number
+  registry: Map<string, TMetadataRegistryEntry>;
+  timestamp: number;
 }
 
 class SearchAdapter implements ISearchAdapter {
-  private embeddingAdapter: IEmbeddingAdapter
-  private client: Client
-  private index: string
-  private modelType: TSearchModelType
-  private fieldMappingConfig: IFieldMappingConfig
-  private metadataRegistryLookup?: ISearchAdapterOptions['metadataRegistryLookup']
-  private registryCache: Map<string, ICacheEntry> = new Map()
-  private readonly cacheTtlMs: number = 5 * 60 * 1000
-  private readonly cacheMaxSize: number = 100
+  private embeddingAdapter: IEmbeddingAdapter;
+  private client: Client;
+  private index: string;
+  private modelType: TSearchModelType;
+  private fieldMappingConfig: IFieldMappingConfig;
+  private metadataRegistryLookup?: ISearchAdapterOptions["metadataRegistryLookup"];
+  private registryCache: Map<string, ICacheEntry> = new Map();
+  private readonly cacheTtlMs: number = 5 * 60 * 1000;
+  private readonly cacheMaxSize: number = 100;
 
   constructor(options: ISearchAdapterOptions) {
-    this.embeddingAdapter = options.embeddingAdapter
-    const nodeUrl = new URL(options.opensearch.node)
-    const isHttps = nodeUrl.protocol === 'https:'
+    this.embeddingAdapter = options.embeddingAdapter;
+    const nodeUrl = new URL(options.opensearch.node);
+    const isHttps = nodeUrl.protocol === "https:";
     this.client = new Client({
       node: options.opensearch.node,
       auth:
         options.opensearch.username && options.opensearch.password
           ? {
-            username: options.opensearch.username,
-            password: options.opensearch.password,
-          }
+              username: options.opensearch.username,
+              password: options.opensearch.password,
+            }
           : undefined,
       ...(isHttps && { ssl: { rejectUnauthorized: false } }),
-    })
+    });
 
-    this.index = options.opensearch.index
-    this.modelType = options.modelType
-    this.metadataRegistryLookup = options.metadataRegistryLookup
+    this.index = options.opensearch.index;
+    this.modelType = options.modelType;
+    this.metadataRegistryLookup = options.metadataRegistryLookup;
 
     const defaultConfig: IFieldMappingConfig = {
       explicit: {},
@@ -67,10 +71,10 @@ class SearchAdapter implements ISearchAdapter {
         camelCase: true,
         kebabCase: true,
         pascalCase: true,
-        metadataPaths: ['metadata'],
-        objectPaths: ['object', 'correlation', 'actor'],
+        metadataPaths: ["metadata"],
+        objectPaths: ["object", "correlation", "actor"],
       },
-    }
+    };
 
     this.fieldMappingConfig = {
       explicit: {
@@ -81,45 +85,45 @@ class SearchAdapter implements ISearchAdapter {
         ...defaultConfig.conventions,
         ...(options.fieldMapping?.conventions ?? {}),
       },
-    }
+    };
 
-    this.ensureIndex()
+    this.ensureIndex();
   }
 
   /**
    * Invalidate cache entry for a specific tenant
    */
   invalidateCache(tenantId: string): void {
-    this.registryCache.delete(tenantId)
+    this.registryCache.delete(tenantId);
   }
 
   /**
    * Clear all cache entries
    */
   clearCache(): void {
-    this.registryCache.clear()
+    this.registryCache.clear();
   }
 
   /**
    * Evict expired entries and enforce size limit using LRU strategy
    */
   private evictCacheEntries(): void {
-    const now = Date.now()
+    const now = Date.now();
 
-    const remainingEntries: Array<[string, ICacheEntry]> = []
+    const remainingEntries: Array<[string, ICacheEntry]> = [];
     for (const [tenantId, entry] of this.registryCache.entries()) {
       if (now - entry.timestamp > this.cacheTtlMs) {
-        this.registryCache.delete(tenantId)
+        this.registryCache.delete(tenantId);
       } else {
-        remainingEntries.push([tenantId, entry])
+        remainingEntries.push([tenantId, entry]);
       }
     }
 
     if (this.registryCache.size > this.cacheMaxSize) {
-      remainingEntries.sort((a, b) => a[1].timestamp - b[1].timestamp)
-      const toRemove = this.registryCache.size - this.cacheMaxSize
+      remainingEntries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = this.registryCache.size - this.cacheMaxSize;
       for (let i = 0; i < toRemove; i++) {
-        this.registryCache.delete(remainingEntries[i]![0])
+        this.registryCache.delete(remainingEntries[i]![0]);
       }
     }
   }
@@ -131,34 +135,35 @@ class SearchAdapter implements ISearchAdapter {
     tenantId: string
   ): Promise<Map<string, TMetadataRegistryEntry> | undefined> {
     if (!this.metadataRegistryLookup) {
-      return undefined
+      return undefined;
     }
 
-    this.evictCacheEntries()
+    this.evictCacheEntries();
 
-    const cached = this.registryCache.get(tenantId)
-    const now = Date.now()
+    const cached = this.registryCache.get(tenantId);
+    const now = Date.now();
 
     if (cached && now - cached.timestamp <= this.cacheTtlMs) {
-      return cached.registry
+      return cached.registry;
     }
 
-    const registry = await this.metadataRegistryLookup.getRegistryForTenant(tenantId)
+    const registry =
+      await this.metadataRegistryLookup.getRegistryForTenant(tenantId);
 
     this.registryCache.set(tenantId, {
       registry,
       timestamp: now,
-    })
+    });
 
-    this.evictCacheEntries()
+    this.evictCacheEntries();
 
-    return registry
+    return registry;
   }
 
   async ensureIndex(): Promise<void> {
     try {
-      const exists = await this.client.indices.exists({ index: this.index })
-      if (exists.body === true) return
+      const exists = await this.client.indices.exists({ index: this.index });
+      if (exists.body === true) return;
     } catch (error) {
       // Continue to create if check fails
     }
@@ -175,7 +180,7 @@ class SearchAdapter implements ISearchAdapter {
           mappings: {
             properties: {
               embedding: {
-                type: 'knn_vector',
+                type: "knn_vector",
                 dimension: this.embeddingAdapter.getEmbeddingDimension(
                   this.modelType
                 ),
@@ -183,56 +188,56 @@ class SearchAdapter implements ISearchAdapter {
             },
           },
         },
-      })
+      });
     } catch (error: any) {
       // Ignore "index already exists" errors (race condition or concurrent requests)
       if (
-        error?.meta?.body?.error?.type !== 'resource_already_exists_exception'
+        error?.meta?.body?.error?.type !== "resource_already_exists_exception"
       ) {
-        throw error
+        throw error;
       }
     }
   }
 
   async ensureIndexTemplate(): Promise<void> {
-    const templateName = 'bl-activity-template'
-    const indexPattern = 'bl-activity-*'
+    const templateName = "bl-activity-template";
+    const indexPattern = "bl-activity-*";
     const expectedDimension = this.embeddingAdapter.getEmbeddingDimension(
       this.modelType
-    )
+    );
 
     // Check if template exists and validate dimension
     try {
       const templateResponse = await this.client.indices.getIndexTemplate({
         name: templateName,
-      })
+      });
 
       if (templateResponse.body?.index_templates?.length > 0) {
-        const template = templateResponse.body.index_templates[0]!
-        const templateDef = template.index_template
-        const embeddingMapping =
-          templateDef?.template?.mappings?.properties?.embedding as any
+        const template = templateResponse.body.index_templates[0]!;
+        const templateDef = template.index_template;
+        const embeddingMapping = templateDef?.template?.mappings?.properties
+          ?.embedding as any;
 
         if (embeddingMapping?.dimension !== undefined) {
-          const actualDimension = embeddingMapping.dimension as number
+          const actualDimension = embeddingMapping.dimension as number;
           if (actualDimension !== expectedDimension) {
             throw new ActivityIndexDimensionMismatchError(
               expectedDimension,
               actualDimension
-            )
+            );
           }
         }
-        return
+        return;
       }
     } catch (error: any) {
       if (error instanceof ActivityIndexDimensionMismatchError) {
-        throw error
+        throw error;
       }
       if (
-        error?.meta?.body?.error?.type !== 'resource_not_found_exception' &&
+        error?.meta?.body?.error?.type !== "resource_not_found_exception" &&
         error?.statusCode !== 404
       ) {
-        throw error
+        throw error;
       }
     }
 
@@ -250,166 +255,168 @@ class SearchAdapter implements ISearchAdapter {
             mappings: {
               properties: {
                 eventId: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 tenantId: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 occurredAt: {
-                  type: 'date',
+                  type: "date",
                 },
                 category: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 action: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 outcome: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 source: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 schemaVersion: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 title: {
-                  type: 'text',
+                  type: "text",
                   fields: {
                     keyword: {
-                      type: 'keyword',
+                      type: "keyword",
                       ignore_above: 256,
                     },
                   },
                 },
                 summary: {
-                  type: 'text',
+                  type: "text",
                   fields: {
                     keyword: {
-                      type: 'keyword',
+                      type: "keyword",
                       ignore_above: 256,
                     },
                   },
                 },
                 message: {
-                  type: 'text',
+                  type: "text",
                   fields: {
                     keyword: {
-                      type: 'keyword',
+                      type: "keyword",
                       ignore_above: 256,
                     },
                   },
                 },
                 actor: {
-                  type: 'object',
+                  type: "object",
                   properties: {
                     userId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     emailHash: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     serviceName: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     role: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                   },
                 },
                 object: {
-                  type: 'object',
+                  type: "object",
                   properties: {
                     orderId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     requestId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     sessionId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     ticketId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     resourceId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                   },
                 },
                 correlation: {
-                  type: 'object',
+                  type: "object",
                   properties: {
                     traceId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     spanId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     correlationId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                     parentEventId: {
-                      type: 'keyword',
+                      type: "keyword",
                     },
                   },
                 },
                 meta_json: {
-                  type: 'object',
+                  type: "object",
                   enabled: true,
                 },
                 meta_kv: {
-                  type: 'keyword',
+                  type: "keyword",
                 },
                 meta_num: {
-                  type: 'object',
-                  dynamic: 'true' as any,
+                  type: "object",
+                  dynamic: "true" as any,
                 },
                 meta_date: {
-                  type: 'object',
-                  dynamic: 'true' as any,
+                  type: "object",
+                  dynamic: "true" as any,
                   properties: {},
                 },
                 meta_bool: {
-                  type: 'object',
-                  dynamic: 'true' as any,
+                  type: "object",
+                  dynamic: "true" as any,
                 },
                 meta_kw: {
-                  type: 'object',
-                  dynamic: 'true' as any,
+                  type: "object",
+                  dynamic: "true" as any,
                 },
                 meta_text: {
-                  type: 'object',
-                  dynamic: 'true' as any,
+                  type: "object",
+                  dynamic: "true" as any,
                 },
                 embedding: {
-                  type: 'knn_vector',
+                  type: "knn_vector",
                   dimension: expectedDimension,
                 },
               },
             },
           },
         },
-      })
+      });
     } catch (error: any) {
-      if (error?.meta?.body?.error?.type === 'illegal_argument_exception') {
-        const errorMessage = error?.meta?.body?.error?.reason || ''
-        if (errorMessage.includes('dimension')) {
+      if (error?.meta?.body?.error?.type === "illegal_argument_exception") {
+        const errorMessage = error?.meta?.body?.error?.reason || "";
+        if (errorMessage.includes("dimension")) {
           try {
-            const templateResponse = await this.client.indices.getIndexTemplate({
-              name: templateName,
-            })
+            const templateResponse = await this.client.indices.getIndexTemplate(
+              {
+                name: templateName,
+              }
+            );
             if (templateResponse.body?.index_templates?.length > 0) {
-              const template = templateResponse.body.index_templates[0]!
-              const templateDef = template.index_template
-              const embeddingMapping =
-                templateDef?.template?.mappings?.properties?.embedding as any
-              const actualDimension = embeddingMapping?.dimension as number
+              const template = templateResponse.body.index_templates[0]!;
+              const templateDef = template.index_template;
+              const embeddingMapping = templateDef?.template?.mappings
+                ?.properties?.embedding as any;
+              const actualDimension = embeddingMapping?.dimension as number;
               if (actualDimension && actualDimension !== expectedDimension) {
                 throw new ActivityIndexDimensionMismatchError(
                   expectedDimension,
                   actualDimension
-                )
+                );
               }
             }
           } catch (checkError) {
@@ -417,24 +424,24 @@ class SearchAdapter implements ISearchAdapter {
           }
         }
       }
-      throw error
+      throw error;
     }
   }
 
   async clearIndex(): Promise<void> {
-    await this.client.indices.delete({ index: this.index })
+    await this.client.indices.delete({ index: this.index });
   }
 
   async indexActivityEvents(
     documents: IActivityEventDocument[],
     indexName: string
   ): Promise<void> {
-    if (documents.length === 0) return
+    if (documents.length === 0) return;
 
-    const body: Bulk_RequestBody = []
+    const body: Bulk_RequestBody = [];
     for (const doc of documents) {
-      const metadata = doc.metadata ?? {}
-      const tenantId = doc.tenantId
+      const metadata = doc.metadata ?? {};
+      const tenantId = doc.tenantId;
 
       const document: Record<string, unknown> = {
         eventId: doc.eventId,
@@ -456,98 +463,107 @@ class SearchAdapter implements ISearchAdapter {
 
         meta_json: metadata,
         meta_kv: [] as string[],
-      }
+      };
 
       const registry = tenantId
         ? await this.getRegistryForTenant(tenantId)
-        : undefined
+        : undefined;
 
-      const metaKv: string[] = []
+      const metaKv: string[] = [];
       for (const [key, value] of Object.entries(metadata)) {
         if (
           value !== null &&
           value !== undefined &&
-          typeof value !== 'object' &&
+          typeof value !== "object" &&
           !Array.isArray(value)
         ) {
-          metaKv.push(`${key}=${String(value)}`)
+          metaKv.push(`${key}=${String(value)}`);
         }
 
         if (registry) {
-          const registryEntry = registry.get(key)
+          const registryEntry = registry.get(key);
           if (registryEntry) {
-            let typedValue: unknown = value
+            let typedValue: unknown = value;
 
             try {
               switch (registryEntry.type) {
-                case 'number':
-                  typedValue = typeof value === 'number' ? value : Number(value)
+                case "number":
+                  typedValue =
+                    typeof value === "number" ? value : Number(value);
                   if (isNaN(typedValue as number)) {
-                    continue
+                    continue;
                   }
-                  break
-                case 'date':
-                  if (typeof value === 'string') {
-                    const date = new Date(value)
+                  break;
+                case "date":
+                  if (typeof value === "string") {
+                    const date = new Date(value);
                     if (isNaN(date.getTime())) {
-                      continue
+                      continue;
                     }
-                    typedValue = value
+                    typedValue = value;
                   } else if (value instanceof Date) {
-                    typedValue = value.toISOString()
+                    typedValue = value.toISOString();
                   } else {
-                    continue
+                    continue;
                   }
-                  break
-                case 'boolean':
-                  if (typeof value === 'boolean') {
-                    typedValue = value
-                  } else if (typeof value === 'string') {
-                    const normalized = value.toLowerCase().trim()
-                    if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
-                      typedValue = true
-                    } else if (normalized === 'false' || normalized === '0' || normalized === 'no') {
-                      typedValue = false
+                  break;
+                case "boolean":
+                  if (typeof value === "boolean") {
+                    typedValue = value;
+                  } else if (typeof value === "string") {
+                    const normalized = value.toLowerCase().trim();
+                    if (
+                      normalized === "true" ||
+                      normalized === "1" ||
+                      normalized === "yes"
+                    ) {
+                      typedValue = true;
+                    } else if (
+                      normalized === "false" ||
+                      normalized === "0" ||
+                      normalized === "no"
+                    ) {
+                      typedValue = false;
                     } else {
-                      continue
+                      continue;
                     }
-                  } else if (typeof value === 'number') {
-                    typedValue = value !== 0
+                  } else if (typeof value === "number") {
+                    typedValue = value !== 0;
                   } else {
-                    continue
+                    continue;
                   }
-                  break
-                case 'keyword':
-                case 'text':
-                  typedValue = String(value)
-                  break
+                  break;
+                case "keyword":
+                case "text":
+                  typedValue = String(value);
+                  break;
               }
 
-              const typedKey = `${registryEntry.promoteTo}.${key}`
-              document[typedKey] = typedValue
+              const typedKey = `${registryEntry.promoteTo}.${key}`;
+              document[typedKey] = typedValue;
             } catch (error) {
-              continue
+              continue;
             }
           }
         }
       }
-      document.meta_kv = metaKv
+      document.meta_kv = metaKv;
 
-      body.push({ index: { _index: indexName, _id: doc.eventId } })
-      body.push(document)
+      body.push({ index: { _index: indexName, _id: doc.eventId } });
+      body.push(document);
     }
 
-    const resp = await this.client.bulk({ refresh: true, body })
+    const resp = await this.client.bulk({ refresh: true, body });
     if (resp.body?.errors) {
-      const items = resp.body.items ?? []
-      const failures = items.filter((x: any) => x.index?.error)
+      const items = resp.body.items ?? [];
+      const failures = items.filter((x: any) => x.index?.error);
       throw new Error(
         `Bulk indexing ActivityEvents had errors: ${JSON.stringify(
           failures.slice(0, 3),
           null,
           2
         )}`
-      )
+      );
     }
   }
 
@@ -557,26 +573,26 @@ class SearchAdapter implements ISearchAdapter {
     const embedding = await this.embeddingAdapter.embed({
       value: args.query,
       type: this.modelType,
-    })
+    });
 
-    const k = args.k ?? 8
+    const k = args.k ?? 8;
 
-    const filterClauses: QueryContainer[] = []
+    const filterClauses: QueryContainer[] = [];
     if (args.filter) {
       for (const [key, value] of Object.entries(args.filter)) {
         if (value !== null && value !== undefined) {
           const termQuery: TermQuery = {
             value: value as FieldValue,
             case_insensitive: true,
-          }
+          };
           const matchQuery: MatchQuery = {
             query: value as FieldValue,
-            analyzer: 'standard',
+            analyzer: "standard",
             auto_generate_synonyms_phrase_query: true,
             cutoff_frequency: 0.001,
-            fuzziness: 'AUTO',
-            zero_terms_query: 'ALL',
-          }
+            fuzziness: "AUTO",
+            zero_terms_query: "ALL",
+          };
           filterClauses.push({
             bool: {
               should: [
@@ -587,7 +603,7 @@ class SearchAdapter implements ISearchAdapter {
               ],
               minimum_should_match: 1,
             },
-          })
+          });
         }
       }
     }
@@ -605,31 +621,31 @@ class SearchAdapter implements ISearchAdapter {
           },
         ],
       },
-    }
+    };
 
     if (filterClauses.length > 0) {
-      query.bool!.filter = filterClauses
+      query.bool!.filter = filterClauses;
     }
 
     const body: Search_RequestBody = {
       size: k,
       _source: true,
       query,
-    }
+    };
 
     const resp = await this.client.search({
       index: this.index,
       body,
-    })
+    });
 
     const hits = (resp.body?.hits?.hits ?? []).map((h: any) => ({
       id: h._id as string,
       score: h._score as number,
       text: h._source?.message as string,
       metadata: h._source as Record<string, unknown>,
-    }))
+    }));
 
-    return hits
+    return hits;
   }
 
   /**
@@ -638,9 +654,9 @@ class SearchAdapter implements ISearchAdapter {
    */
   private toSnakeCase(str: string): string {
     return str
-      .replace(/([A-Z])/g, '_$1')
+      .replace(/([A-Z])/g, "_$1")
       .toLowerCase()
-      .replace(/^_/, '')
+      .replace(/^_/, "");
   }
 
   /**
@@ -650,11 +666,11 @@ class SearchAdapter implements ISearchAdapter {
    */
   private toCamelCase(str: string): string {
     if (/^[a-z]/.test(str) && !/[-_]/.test(str)) {
-      return str
+      return str;
     }
     return str
       .replace(/[-_](.)/g, (_, char) => char.toUpperCase())
-      .replace(/^[A-Z]/, (char) => char.toLowerCase())
+      .replace(/^[A-Z]/, (char) => char.toLowerCase());
   }
 
   /**
@@ -663,10 +679,10 @@ class SearchAdapter implements ISearchAdapter {
    */
   private toKebabCase(str: string): string {
     return str
-      .replace(/([A-Z])/g, '-$1')
+      .replace(/([A-Z])/g, "-$1")
       .toLowerCase()
-      .replace(/^[-_]/, '')
-      .replace(/[-_]/g, '-')
+      .replace(/^[-_]/, "")
+      .replace(/[-_]/g, "-");
   }
 
   /**
@@ -674,8 +690,8 @@ class SearchAdapter implements ISearchAdapter {
    * e.g., "orderId" -> "OrderId", "order_id" -> "OrderId"
    */
   private toPascalCase(str: string): string {
-    const camel = this.toCamelCase(str)
-    return camel.charAt(0).toUpperCase() + camel.slice(1)
+    const camel = this.toCamelCase(str);
+    return camel.charAt(0).toUpperCase() + camel.slice(1);
   }
 
   /**
@@ -683,69 +699,69 @@ class SearchAdapter implements ISearchAdapter {
    */
   private generateFieldPaths(identifierType: string): string[] {
     if (this.fieldMappingConfig.explicit?.[identifierType]) {
-      return this.fieldMappingConfig.explicit[identifierType]
+      return this.fieldMappingConfig.explicit[identifierType];
     }
 
-    const conventions = this.fieldMappingConfig.conventions ?? {}
-    const fieldNames: string[] = []
+    const conventions = this.fieldMappingConfig.conventions ?? {};
+    const fieldNames: string[] = [];
 
     if (conventions.snakeCase) {
-      fieldNames.push(this.toSnakeCase(identifierType))
+      fieldNames.push(this.toSnakeCase(identifierType));
     }
     if (conventions.camelCase) {
-      fieldNames.push(this.toCamelCase(identifierType))
+      fieldNames.push(this.toCamelCase(identifierType));
     }
     if (conventions.kebabCase) {
-      fieldNames.push(this.toKebabCase(identifierType))
+      fieldNames.push(this.toKebabCase(identifierType));
     }
     if (conventions.pascalCase) {
-      fieldNames.push(this.toPascalCase(identifierType))
+      fieldNames.push(this.toPascalCase(identifierType));
     }
 
-    const pathsSet = new Set<string>(fieldNames)
+    const pathsSet = new Set<string>(fieldNames);
 
-    const metadataPaths = conventions.metadataPaths ?? []
+    const metadataPaths = conventions.metadataPaths ?? [];
     metadataPaths.forEach((metadataPath) => {
       fieldNames.forEach((fieldName) => {
-        pathsSet.add(`${metadataPath}.${fieldName}`)
-      })
-    })
+        pathsSet.add(`${metadataPath}.${fieldName}`);
+      });
+    });
 
-    const objectPaths = conventions.objectPaths ?? []
+    const objectPaths = conventions.objectPaths ?? [];
     objectPaths.forEach((objectPath) => {
       fieldNames.forEach((fieldName) => {
-        pathsSet.add(`${objectPath}.${fieldName}`)
-      })
-    })
+        pathsSet.add(`${objectPath}.${fieldName}`);
+      });
+    });
 
     const identifierTypeToObjectField: Record<string, string> = {
-      shipmentId: 'resourceId',
-    }
-    const mappedFieldName = identifierTypeToObjectField[identifierType]
+      shipmentId: "resourceId",
+    };
+    const mappedFieldName = identifierTypeToObjectField[identifierType];
     if (mappedFieldName) {
-      const mappedFieldNames: string[] = []
+      const mappedFieldNames: string[] = [];
       if (conventions.camelCase) {
-        mappedFieldNames.push(this.toCamelCase(mappedFieldName))
+        mappedFieldNames.push(this.toCamelCase(mappedFieldName));
       }
       if (conventions.snakeCase) {
-        mappedFieldNames.push(this.toSnakeCase(mappedFieldName))
+        mappedFieldNames.push(this.toSnakeCase(mappedFieldName));
       }
       objectPaths.forEach((objectPath) => {
         mappedFieldNames.forEach((mappedName) => {
-          pathsSet.add(`${objectPath}.${mappedName}`)
-        })
-      })
+          pathsSet.add(`${objectPath}.${mappedName}`);
+        });
+      });
     }
 
-    return Array.from(pathsSet)
+    return Array.from(pathsSet);
   }
 
   async exactSearch(
     args: ISearchAdapterExactSearchArgs
   ): Promise<ISearchAdapterExactSearchResult[]> {
-    const { identifier, identifierType } = args
+    const { identifier, identifierType } = args;
 
-    const fields = this.generateFieldPaths(identifierType)
+    const fields = this.generateFieldPaths(identifierType);
 
     const shouldClauses = fields.flatMap((field) => [
       {
@@ -760,18 +776,18 @@ class SearchAdapter implements ISearchAdapter {
         match: {
           [field]: {
             query: identifier,
-            operator: 'and' as const,
+            operator: "and" as const,
           },
         },
       },
-    ])
+    ]);
 
     const query: QueryContainer = {
       bool: {
         should: shouldClauses,
         minimum_should_match: 1,
       },
-    }
+    };
 
     const body: Search_RequestBody = {
       size: 1000,
@@ -780,9 +796,9 @@ class SearchAdapter implements ISearchAdapter {
       sort: [
         {
           _script: {
-            type: 'number',
+            type: "number",
             script: {
-              lang: 'painless',
+              lang: "painless",
               source: `
                 if (doc['occurredAt'].size() > 0) {
                   return doc['occurredAt'].value.millis;
@@ -793,13 +809,13 @@ class SearchAdapter implements ISearchAdapter {
                 }
               `,
             },
-            order: 'asc' as const,
+            order: "asc" as const,
           },
         },
       ],
-    }
+    };
 
-    const searchIndices = ['bl-activity-*', this.index]
+    const searchIndices = ["bl-activity-*", this.index];
 
     // Enable request caching for repeated queries
     // This caches the query results at the index level for faster subsequent requests
@@ -807,23 +823,24 @@ class SearchAdapter implements ISearchAdapter {
       index: searchIndices,
       body,
       request_cache: true,
-    })
+    });
 
     const hits = (resp.body?.hits?.hits ?? []).map((h: any) => ({
       id: h._id as string,
       timestamp: (h._source?.occurredAt || h._source?.timestamp) as string,
       level: (h._source?.level || h._source?.outcome) as string,
-      service: h._source?.source || h._source?.service as string,
+      service: h._source?.source || (h._source?.service as string),
       message: h._source?.message as string,
       metadata: h._source as Record<string, unknown>,
-    }))
+    }));
 
-    return hits
+    return hits;
   }
 }
 
 export const createSearchAdapter = (options: ICreateSearchAdapterOptions) => {
-  const modelType: TSearchModelType = options.embedding.dimension === 768 ? 'low' : 'high'
+  const modelType: TSearchModelType =
+    options.embedding.dimension === 768 ? "low" : "high";
 
   const embeddingAdapter = createEmbeddingAdapter({
     options: {
@@ -843,12 +860,12 @@ export const createSearchAdapter = (options: ICreateSearchAdapterOptions) => {
         },
       },
     },
-  })
+  });
 
   return new SearchAdapter({
     embeddingAdapter,
     modelType,
     opensearch: options.opensearch,
     fieldMapping: options.fieldMapping,
-  })
-}
+  });
+};
