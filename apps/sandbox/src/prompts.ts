@@ -1,7 +1,7 @@
-import { getSchemaJsonExample, getConcreteSchemaExample } from './schemas'
+import { getSchemaJsonExample, getConcreteSchemaExample } from "./schemas";
 
 // High-Level Agent Definition
-const highLevelDefinition = `You are an **Activity Search & Analysis agent** who helps users understand events, incidents, and timelines by searching through indexed activity logs and generating structured reports.`
+const highLevelDefinition = `You are an **Activity Search & Analysis agent** who helps users understand events, incidents, and timelines by searching through indexed activity logs and generating structured reports.`;
 
 // General Instructions
 const generalInstructions = `
@@ -25,16 +25,16 @@ The user will provide a query, and you will:
 - Story Mode: Output JSON only (MUST match StoryOutputSchema with "story" wrapper)
 - COE Mode: Output COE JSON only (NOT available when StoryOutputSchema is provided)
 - Q&A Mode: Short, direct, actionable, cited responses (NOT used when StoryOutputSchema is provided)
-`
+`;
 
 // Essential Context (function to evaluate date at runtime)
 const getEssentialContext = () => `
 ## ESSENTIAL CONTEXT
 
-For context, today's date is: ${new Date().toISOString().split('T')[0]}
+For context, today's date is: ${new Date().toISOString().split("T")[0]}
 
 **Important:** All timestamps in search results are in UTC. When referencing dates or times, maintain consistency with UTC timezone.
-`
+`;
 
 // Tool Descriptions and Usage Instructions
 const toolDescriptions = `
@@ -126,7 +126,7 @@ Below are detailed instructions for using the available tools. Use these tools i
 1. Call rewriteQuery to optimize the search query
 2. Call knowledgeBaseSearch with the optimized query
 3. Answer using only the returned excerpts with citations
-`
+`;
 
 // Workflow Selection (Mode Router)
 const workflowSelection = `
@@ -157,7 +157,7 @@ const workflowSelection = `
 - **If there's ANY identifier in the query → ALWAYS use Story Mode and output Story format**
 - Include root cause analysis, impact assessment, and recommendations in the Story's summary and impact fields
 - Do NOT generate COE format when an identifier is present
-`
+`;
 
 export const getSystemPrompt = () => `
 ## Betalogs Activity Search, Story, COE, & Q&A Agent Specification
@@ -270,7 +270,7 @@ If multiple identifiers exist, prefer:
 ### Story Output (JSON)
 **The output MUST have this exact structure with a "story" wrapper object:**
 \`\`\`json
-${getConcreteSchemaExample('story')}
+${getConcreteSchemaExample("story")}
 \`\`\`
 
 **CRITICAL: Notice that ALL fields (identifier, identifierType, timeRange, timeline, rawEvents, summary, impact, duration, eventCount) are INSIDE the "story" object. The root level MUST only contain "story".**
@@ -334,7 +334,7 @@ COE is a **standard post-incident mechanism** focused on learning and **action i
 
 ### COE Output (JSON)
 \`\`\`json
-${getSchemaJsonExample('coe')}
+${getSchemaJsonExample("coe")}
 \`\`\`
 
 ---
@@ -392,5 +392,4 @@ Every factual claim must include citations:
 - **When StoryOutputSchema is provided: ALWAYS output Story JSON format, even for analytical queries without identifiers**
 - Never mention tools or internal steps in your final output
 - If evidence is insufficient, respond exactly: "I don't have enough information to resolve your query"
-`
-
+`;

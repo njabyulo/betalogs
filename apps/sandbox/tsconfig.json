@@ -6,12 +6,6 @@
     "incremental": false,
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*",
-    "sst-env.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*", "sst-env.d.ts"],
+  "exclude": ["node_modules", "dist"]
 }
